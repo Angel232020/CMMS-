@@ -1,0 +1,218 @@
+﻿@model CMMS.Models.OrdenTrabajo
+
+@{
+    ViewData["Title"] = "Eliminar Orden";
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow border-0 rounded-4">
+
+        <!-- HEADER -->
+        <div class="card-header bg-danger text-white">
+
+            <h3 class="mb-0">
+                <i class="bi bi-trash-fill"></i>
+                Eliminar Orden de Trabajo
+            </h3>
+
+        </div>
+
+        <!-- BODY -->
+        <div class="card-body p-4">
+
+            <!-- MENSAJE DE ERROR -->
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger d-flex align-items-center mb-4">
+
+                    <i class="bi bi-exclamation-octagon-fill me-2"></i>
+
+                    <div>
+                        @TempData["Error"]
+                    </div>
+
+                </div>
+            }
+
+            <!-- ALERTA -->
+            <div class="alert alert-warning d-flex align-items-center">
+
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+
+                <div>
+                    ¿Está seguro que desea eliminar esta orden?
+                    Esta acción no se puede deshacer.
+                </div>
+
+            </div>
+
+            <div class="row g-4">
+
+                <!-- FECHA -->
+                <div class="col-md-6">
+
+                    <label class="fw-bold text-secondary">
+                        Fecha de Creación
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @(Model.FechaCreacion != null
+                            ? Model.FechaCreacion?.ToString("dd/MM/yyyy")
+                            : "Sin fecha")
+
+                    </div>
+
+                </div>
+
+                <!-- ESTADO -->
+                <div class="col-md-6">
+
+                    <label class="fw-bold text-secondary">
+                        Estado
+                    </label>
+
+                    <div>
+
+                        @if (Model.Estado == "Finalizada")
+                        {
+                            <span class="badge bg-success fs-6">
+                                @Model.Estado
+                            </span>
+                        }
+                        else if (Model.Estado == "En Proceso")
+                        {
+                            <span class="badge bg-warning text-dark fs-6">
+                                @Model.Estado
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary fs-6">
+                                @Model.Estado
+                            </span>
+                        }
+
+                    </div>
+
+                </div>
+
+                <!-- DESCRIPCIÓN -->
+                <div class="col-md-12">
+
+                    <label class="fw-bold text-secondary">
+                        Descripción
+                    </label>
+
+                    <div class="form-control bg-light"
+                         style="min-height: 100px;">
+
+                        @Model.Descripcion
+
+                    </div>
+
+                </div>
+
+                <!-- CLIENTE -->
+                <div class="col-md-6">
+
+                    <label class="fw-bold text-secondary">
+                        Cliente
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @(Model.IdClienteNavigation != null
+                            ? Model.IdClienteNavigation.Nombres + " " +
+                              Model.IdClienteNavigation.Apellidos
+                            : "Sin cliente")
+
+                    </div>
+
+                </div>
+
+                <!-- MÁQUINA -->
+                <div class="col-md-6">
+
+                    <label class="fw-bold text-secondary">
+                        Máquina
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @(Model.IdMaquinaNavigation != null
+                            ? Model.IdMaquinaNavigation.Marca + " - " +
+                              Model.IdMaquinaNavigation.Modelo
+                            : "Sin máquina")
+
+                    </div>
+
+                </div>
+
+                <!-- TIPO SERVICIO -->
+                <div class="col-md-6">
+
+                    <label class="fw-bold text-secondary">
+                        Tipo de Servicio
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @(Model.IdTipoServicioNavigation != null
+                            ? Model.IdTipoServicioNavigation.Nombre
+                            : "Sin servicio")
+
+                    </div>
+
+                </div>
+
+                <!-- USUARIO -->
+                <div class="col-md-6">
+
+                    <label class="fw-bold text-secondary">
+                        Usuario Responsable
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @(Model.IdUsuarioNavigation != null
+                            ? Model.IdUsuarioNavigation.Nombre
+                            : "Sin usuario")
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <hr class="my-4" />
+
+            <!-- BOTONES -->
+            <form asp-action="Delete">
+
+                <input type="hidden" asp-for="IdOrden" />
+
+                <div class="d-flex justify-content-between">
+
+                    <a asp-action="Index"
+                       class="btn btn-secondary">
+                        <i class="bi bi-arrow-left-circle"></i>
+                        Regresar
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-danger">
+                        <i class="bi bi-x-circle"></i>
+                        Cancelar Orden
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>

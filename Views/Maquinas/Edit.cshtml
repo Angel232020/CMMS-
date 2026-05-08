@@ -1,0 +1,149 @@
+﻿@model CMMS.Models.Maquina
+
+@{
+    ViewData["Title"] = "Editar Máquina";
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow border-0 rounded-4">
+
+        <div class="card-header bg-warning text-dark">
+            <h3 class="mb-0">
+                <i class="bi bi-pencil-square"></i>
+                Editar Máquina
+            </h3>
+        </div>
+
+        <div class="card-body p-4">
+
+            <form asp-action="Edit">
+
+                <div asp-validation-summary="ModelOnly"
+                     class="alert alert-danger">
+                </div>
+
+                <input type="hidden" asp-for="IdMaquina" />
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+
+                        <label asp-for="Tipo"
+                               class="form-label fw-bold">
+                        </label>
+
+                        <input asp-for="Tipo"
+                               class="form-control"
+                               placeholder="Ingrese el tipo de máquina" />
+
+                        <span asp-validation-for="Tipo"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label asp-for="Marca"
+                               class="form-label fw-bold">
+                        </label>
+
+                        <input asp-for="Marca"
+                               class="form-control"
+                               placeholder="Ingrese la marca" />
+
+                        <span asp-validation-for="Marca"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label asp-for="Modelo"
+                               class="form-label fw-bold">
+                        </label>
+
+                        <input asp-for="Modelo"
+                               class="form-control"
+                               placeholder="Ingrese el modelo" />
+
+                        <span asp-validation-for="Modelo"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label asp-for="Serie"
+                               class="form-label fw-bold">
+                        </label>
+
+                        <input asp-for="Serie"
+                               class="form-control"
+                               placeholder="Ingrese número de serie" />
+
+                        <span asp-validation-for="Serie"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+
+                        <label asp-for="IdCliente"
+                               class="form-label fw-bold">
+                            Cliente
+                        </label>
+
+                        <select asp-for="IdCliente"
+                                class="form-select"
+                                asp-items="ViewBag.IdCliente">
+
+                            <option value="">
+                                Seleccione un cliente
+                            </option>
+
+                        </select>
+
+                        <span asp-validation-for="IdCliente"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <div class="d-flex justify-content-between">
+
+                    <a asp-action="Index"
+                       class="btn btn-secondary">
+                        <i class="bi bi-arrow-left-circle"></i>
+                        Regresar
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-warning text-dark">
+                        <i class="bi bi-save-fill"></i>
+                        Guardar Cambios
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

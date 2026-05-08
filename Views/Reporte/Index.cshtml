@@ -1,0 +1,161 @@
+@model Reportes
+@using System.Text.Json
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<form method="get" class="row mb-3">
+    <div class="col-md-3">
+        <label>Fecha inicio</label>
+        <input type="date" name="fechaInicio" value="@ViewBag.FechaInicio" class="form-control" />
+    </div>
+
+    <div class="col-md-3">
+        <label>Fecha fin</label>
+        <input type="date" name="fechaFin" value="@ViewBag.FechaFin" class="form-control" />
+    </div>
+
+    <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+</form>
+<div class="container mt-4">
+
+    <h2>Dashboard CMMS</h2>
+
+    <!-- KPIs -->
+    <div class="row text-center">
+        <div class="col-md-3">
+            <div class="card p-3 bg-primary text-white">
+                <h4>@Model.TotalOrdenes</h4>
+                <p>Total Órdenes</p>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3 bg-warning">
+                <h4>@Model.OrdenesPendientes</h4>
+                <p>Pendientes</p>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3 bg-success text-white">
+                <h4>@Model.OrdenesFinalizadas</h4>
+                <p>Finalizadas</p>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3 bg-danger text-white">
+                <h4>@Model.OrdenesCanceladas</h4>
+                <p>Canceladas</p>
+            </div>
+        </div>
+    </div>
+
+    <hr />
+
+    <!-- Gráficas -->
+    <div class="row">
+    <div style="width: 300px; height: 300px; margin: auto;">
+        <canvas id="estadoChart"></canvas>
+    </div>
+
+        <div class="col-md-6">
+            <canvas id="tecnicoChart"></canvas>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <canvas id="repuestoChart"></canvas>
+        </div>
+
+        <div class="col-md-6">
+            <canvas id="ingresosChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    new Chart(document.getElementById('estadoChart'), {
+        type: 'pie',
+        data: {
+            labels: [
+                'Pendientes',
+                'Finalizadas',
+                'Canceladas'
+            ],
+            datasets: [{
+                data: [
+                    @Model.OrdenesPendientes,
+                    @Model.OrdenesFinalizadas,
+                    @Model.OrdenesCanceladas
+                ],
+                backgroundColor: [
+                    '#ffc107', // 🟡 Pendientes
+                    '#28a745', // 🟢 Finalizadas
+                    '#dc3545'  // 🔴 Canceladas
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('tecnicoChart'), {
+        type: 'bar',
+        data: {
+            labels: @Html.Raw(JsonSerializer.Serialize(Model.Tecnicos)),
+            datasets: [{
+                label: 'Trabajos',
+                data: @Html.Raw(JsonSerializer.Serialize(Model.TrabajosPorTecnico))
+            }]
+        }
+    });
+
+    new Chart(document.getElementById('repuestoChart'), {
+        type: 'bar',
+        data: {
+            labels: @Html.Raw(JsonSerializer.Serialize(Model.Repuestos)),
+            datasets: [{
+                label: 'Uso',
+                data: @Html.Raw(JsonSerializer.Serialize(Model.UsoRepuestos))
+            }]
+        }
+    });
+
+    new Chart(document.getElementById('ingresosChart'), {
+    type: 'line',
+    data: {
+        labels: @Html.Raw(JsonSerializer.Serialize(Model.Meses)),
+        datasets: [{
+            label: 'Ingresos ($)',
+            data: @Html.Raw(JsonSerializer.Serialize(Model.IngresosPorMes)),
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4, // suaviza la línea
+            pointRadius: 5,
+            pointHoverRadius: 7
+        }]
+    },
+    options: {
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>

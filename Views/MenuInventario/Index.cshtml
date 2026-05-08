@@ -1,0 +1,62 @@
+﻿@{
+    ViewData["Title"] = "MenúInventario";
+}
+
+<link rel="stylesheet" href="~/css/MenuAsesor.css" />
+
+<div class="container-menu">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+
+        <div class="top-section">
+            <h2 class="logo-text">Taller X-GMASS</h2>
+
+            <ul class="menu-links">
+
+                <li>
+                    <a asp-controller="OrdenTrabajoes" asp-action="Index">
+                        <i class="bi bi-card-checklist"></i>
+                        <span>Orden de trabajo</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a asp-controller="Repuestoes" asp-action="Index">
+                        <i class="bi bi-box-seam"></i>
+                        <span>Inventario</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="logout">
+            <a asp-controller="Account" asp-action="Login">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Cerrar sesión</span>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- CONTENIDO -->
+    <div class="main-content">
+
+        <!-- BOTÓN HAMBURGUESA -->
+        <button class="menu-btn" onclick="toggleMenu()">
+            ☰
+        </button>
+
+        <div class="content-center">
+            <h1>Bienvenido al sistema CMMS</h1>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    function toggleMenu() {
+        document.getElementById("sidebar").classList.toggle("collapsed");
+    }
+</script>

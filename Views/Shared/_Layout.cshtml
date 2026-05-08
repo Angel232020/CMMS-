@@ -1,0 +1,167 @@
+﻿@{
+    var rol = User.FindFirst("IdRol")?.Value;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - CMMS</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/CMMS.styles.css" asp-append-version="true" />
+
+    <!-- Iconos -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+
+<body>
+
+    <!-- 🔵 NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+
+            <a class="navbar-brand" asp-controller="Menu" asp-action="Index">
+                Taller X-GMASS
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="menuNav">
+
+                <!-- 🔹 MENÚ DINÁMICO -->
+                <ul class="navbar-nav me-auto">
+
+                    @* 🔵 ADMIN *@
+                    @if (rol == "1")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Asignacions" asp-action="Index">
+                                <i class="bi bi-calendar-check"></i> Programación
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="OrdenTrabajoes" asp-action="Index">
+                                <i class="bi bi-wrench"></i> Órdenes
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Maquinas" asp-action="Index">
+                                <i class="bi bi-gear"></i> Vehículos
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Reporte" asp-action="Index">
+                                <i class="bi bi-bar-chart"></i> Reportes
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Clientes" asp-action="Index">
+                                <i class="bi bi-people"></i> Clientes
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Usuarios" asp-action="Index">
+                                <i class="bi bi-person-gear"></i> Gestión de Usuarios
+                            </a>
+                        </li>
+                    }
+
+                    @* 🟢 TÉCNICO *@
+                    else if (rol == "2")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="OrdenTrabajoes" asp-action="Index">
+                                <i class="bi bi-wrench"></i> Órdenes
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Asignacions" asp-action="Index">
+                                <i class="bi bi-calendar-check"></i> Asignaciones
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="DetalleOrdens" asp-action="Index">
+                                <i class="bi bi-ui-checks"></i> Detalle
+                            </a>
+                        </li>
+                    }
+
+                    @* 🟡 INVENTARIO *@
+                    else if (rol == "3")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="OrdenTrabajoes" asp-action="Index">
+                                <i class="bi bi-card-checklist"></i> Orden de trabajo
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Repuestoes" asp-action="Index">
+                                <i class="bi bi-box-seam"></i> Inventario
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="SolicitudRepuestos" asp-action="Index">
+                                <i class="bi bi-clipboard-data"></i> Solicitud de repuesto
+                            </a>
+                        </li>
+                    }
+
+                </ul>
+
+                <!-- 🔹 USUARIO + LOGOUT -->
+                <ul class="navbar-nav align-items-center">
+
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <li class="nav-item me-3 text-white">
+                            <i class="bi bi-person-circle"></i>
+                            @User.Identity.Name
+                        </li>
+                    }
+                    <li class="nav-item">
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="nav-link btn btn-link text-danger">
+                                <i class="bi bi-box-arrow-right"></i> Salir
+                            </button>
+                        </form>
+                    </li>
+
+                </ul>
+
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

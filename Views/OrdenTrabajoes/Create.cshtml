@@ -1,0 +1,214 @@
+﻿@model CMMS.Models.OrdenTrabajo
+
+@{
+    ViewData["Title"] = "Nueva Orden";
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow border-0 rounded-4">
+
+        <!-- HEADER -->
+        <div class="card-header bg-primary text-white">
+
+            <h3 class="mb-0">
+                <i class="bi bi-plus-circle-fill"></i>
+                Registrar Orden de Trabajo
+            </h3>
+
+        </div>
+
+        <!-- BODY -->
+        <div class="card-body p-4">
+
+            <form asp-action="Create">
+
+                <div asp-validation-summary="ModelOnly"
+                     class="alert alert-danger">
+                </div>
+
+                <div class="row">
+
+                    <!-- ESTADO -->
+                    <div class="col-md-6 mb-3">
+
+                        <label asp-for="Estado"
+                               class="form-label fw-bold">
+                        </label>
+
+                        <select asp-for="Estado"
+                                class="form-select">
+
+                            <option value="">
+                                Seleccione un estado
+                            </option>
+
+                            <option value="Pendiente">
+                                Pendiente
+                            </option>
+
+                            <option value="En Proceso">
+                                En Proceso
+                            </option>
+
+                            <option value="Finalizada">
+                                Finalizada
+                            </option>
+
+                        </select>
+
+                        <span asp-validation-for="Estado"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                    <!-- CLIENTE -->
+                    <div class="col-md-6 mb-3">
+
+                        <label asp-for="IdCliente"
+                               class="form-label fw-bold">
+                            Cliente
+                        </label>
+
+                        <select asp-for="IdCliente"
+                                class="form-select"
+                                asp-items="ViewBag.IdCliente">
+
+                            <option value="">
+                                Seleccione un cliente
+                            </option>
+
+                        </select>
+
+                        <span asp-validation-for="IdCliente"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                    <!-- MÁQUINA -->
+                    <div class="col-md-6 mb-3">
+
+                        <label asp-for="IdMaquina"
+                               class="form-label fw-bold">
+                            Máquina
+                        </label>
+
+                        <select asp-for="IdMaquina"
+                                class="form-select"
+                                asp-items="ViewBag.IdMaquina">
+
+                            <option value="">
+                                Seleccione una máquina
+                            </option>
+
+                        </select>
+
+                        <span asp-validation-for="IdMaquina"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                    <!-- TIPO SERVICIO -->
+                    <div class="col-md-6 mb-3">
+
+                        <label asp-for="IdTipoServicio"
+                               class="form-label fw-bold">
+                            Tipo de Servicio
+                        </label>
+
+                        <select asp-for="IdTipoServicio"
+                                class="form-select"
+                                asp-items="ViewBag.IdTipoServicio">
+
+                            <option value="">
+                                Seleccione un servicio
+                            </option>
+
+                        </select>
+
+                        <span asp-validation-for="IdTipoServicio"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                    <!-- USUARIO -->
+                    <div class="col-md-6 mb-3">
+
+                        <label asp-for="IdUsuario"
+                               class="form-label fw-bold">
+                            Usuario Responsable
+                        </label>
+
+                        <select asp-for="IdUsuario"
+                                class="form-select"
+                                asp-items="ViewBag.IdUsuario">
+
+                            <option value="">
+                                Seleccione un usuario
+                            </option>
+
+                        </select>
+
+                        <span asp-validation-for="IdUsuario"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                    <!-- DESCRIPCIÓN -->
+                    <div class="col-md-12 mb-3">
+
+                        <label asp-for="Descripcion"
+                               class="form-label fw-bold">
+                        </label>
+
+                        <textarea asp-for="Descripcion"
+                                  class="form-control"
+                                  rows="4"
+                                  placeholder="Ingrese una descripción de la orden">
+                        </textarea>
+
+                        <span asp-validation-for="Descripcion"
+                              class="text-danger">
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <!-- BOTONES -->
+                <div class="d-flex justify-content-between">
+
+                    <a asp-action="Index"
+                       class="btn btn-secondary">
+                        <i class="bi bi-arrow-left-circle"></i>
+                        Regresar
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-primary">
+                        <i class="bi bi-save-fill"></i>
+                        Guardar Orden
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,139 @@
+﻿@model CMMS.Models.Asignacion
+
+@{
+    ViewData["Title"] = "Eliminar Asignación";
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow border-0 rounded-4">
+
+        <!-- HEADER -->
+        <div class="card-header bg-danger text-white">
+
+            <h3 class="mb-0">
+                <i class="bi bi-trash-fill"></i>
+                Eliminar Asignación
+            </h3>
+
+        </div>
+
+        <!-- BODY -->
+        <div class="card-body p-4">
+
+            <div class="alert alert-warning">
+
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                ¿Está seguro que desea eliminar esta asignación?
+
+            </div>
+
+            <div class="row g-4">
+
+                <!-- FECHA -->
+                <div class="col-md-6">
+
+                    <label class="fw-bold text-secondary">
+                        Fecha de Asignación
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @(Model.FechaAsignacion != null
+                            ? Model.FechaAsignacion?.ToString("dd/MM/yyyy HH:mm")
+                            : "Sin fecha")
+
+                    </div>
+
+                </div>
+
+                <!-- ORDEN -->
+                <div class="col-md-6">
+
+                    <label class="fw-bold text-secondary">
+                        Orden de Trabajo
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @(Model.IdOrdenNavigation != null
+                            ? "Orden #" + Model.IdOrdenNavigation.IdOrden +
+                              " - " + Model.IdOrdenNavigation.Estado
+                            : "Sin orden")
+
+                    </div>
+
+                </div>
+
+                <!-- TECNICO -->
+                <div class="col-md-6">
+
+                    <label class="fw-bold text-secondary">
+                        Técnico
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @(Model.IdTecnicoNavigation != null
+                            ? Model.IdTecnicoNavigation.Nombres + " " +
+                              Model.IdTecnicoNavigation.Apellidos
+                            : "Sin técnico")
+
+                    </div>
+
+                </div>
+
+                <!-- USUARIO -->
+                <div class="col-md-6">
+
+                    <label class="fw-bold text-secondary">
+                        Usuario Responsable
+                    </label>
+
+                    <div class="form-control bg-light">
+
+                        @(Model.IdUsuarioNavigation != null
+                            ? Model.IdUsuarioNavigation.Nombre
+                            : "Sin usuario")
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <hr class="my-4" />
+
+            <!-- FORM -->
+            <form asp-action="Delete">
+
+                <input type="hidden"
+                       asp-for="IdAsignacion" />
+
+                <div class="d-flex justify-content-between">
+
+                    <a asp-action="Index"
+                       class="btn btn-secondary">
+
+                        <i class="bi bi-arrow-left-circle"></i>
+                        Regresar
+
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-danger">
+
+                        <i class="bi bi-x-circle"></i>
+                        Cancelar
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>

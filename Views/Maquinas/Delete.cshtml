@@ -1,0 +1,127 @@
+﻿@model CMMS.Models.Maquina
+
+@{
+    ViewData["Title"] = "Eliminar Máquina";
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow border-0 rounded-4">
+
+        <div class="card-header bg-danger text-white">
+            <h3 class="mb-0">
+                <i class="bi bi-trash-fill"></i>
+                Eliminar Máquina
+            </h3>
+        </div>
+
+        <div class="card-body p-4">
+
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                ¿Está seguro que desea eliminar esta máquina?
+            </div>
+
+            <div class="row mb-3">
+
+                <div class="col-md-3 fw-bold text-secondary">
+                    Tipo
+                </div>
+
+                <div class="col-md-9">
+                    <span class="badge bg-primary">
+                        @Model.Tipo
+                    </span>
+                </div>
+
+            </div>
+
+            <hr />
+
+            <div class="row mb-3">
+
+                <div class="col-md-3 fw-bold text-secondary">
+                    Marca
+                </div>
+
+                <div class="col-md-9">
+                    @Model.Marca
+                </div>
+
+            </div>
+
+            <hr />
+
+            <div class="row mb-3">
+
+                <div class="col-md-3 fw-bold text-secondary">
+                    Modelo
+                </div>
+
+                <div class="col-md-9">
+                    @Model.Modelo
+                </div>
+
+            </div>
+
+            <hr />
+
+            <div class="row mb-3">
+
+                <div class="col-md-3 fw-bold text-secondary">
+                    Serie
+                </div>
+
+                <div class="col-md-9">
+                    <code>@Model.Serie</code>
+                </div>
+
+            </div>
+
+            <hr />
+
+            <div class="row mb-3">
+
+                <div class="col-md-3 fw-bold text-secondary">
+                    Cliente
+                </div>
+
+                <div class="col-md-9">
+
+                    @(Model.IdClienteNavigation != null
+                        ? Model.IdClienteNavigation.Nombres + " " +
+                          Model.IdClienteNavigation.Apellidos
+                        : "Sin cliente asignado")
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card-footer bg-light">
+
+            <form asp-action="Delete"
+                  class="d-flex justify-content-between">
+
+                <input type="hidden" asp-for="IdMaquina" />
+
+                <a asp-action="Index"
+                   class="btn btn-secondary">
+                    <i class="bi bi-arrow-left-circle"></i>
+                    Cancelar
+                </a>
+
+                <button type="submit"
+                        class="btn btn-danger">
+                    <i class="bi bi-trash-fill"></i>
+                    Eliminar
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>

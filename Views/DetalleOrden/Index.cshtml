@@ -1,0 +1,155 @@
+﻿@model IEnumerable<CMMS.Models.DetalleOrden>
+
+@{
+    ViewData["Title"] = "Detalle de Órdenes";
+}
+
+<div class="container mt-4">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <h2 class="fw-bold text-primary">
+            <i class="bi bi-clipboard2-check-fill"></i>
+            Gestión de Detalle de Órdenes
+        </h2>
+
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i>
+            Nuevo Detalle
+        </a>
+
+    </div>
+
+    <!-- TABLA -->
+    <div class="card shadow border-0 rounded-4">
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-dark">
+
+                        <tr>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Fin</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th>Costo Total</th>
+                            <th>Asignación</th>
+                            <th>Orden</th>
+                            <th>Solicitud</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <!-- FECHA INICIO -->
+                                <td>
+                                    @(item.FechaInicio.HasValue
+                                        ? item.FechaInicio.Value.ToString("dd/MM/yyyy")
+                                        : "Sin fecha")
+                                </td>
+
+                                <!-- FECHA FIN -->
+                                <td>
+                                    @(item.FechaFin.HasValue
+                                        ? item.FechaFin.Value.ToString("dd/MM/yyyy")
+                                        : "Pendiente")
+                                </td>
+
+                                <!-- DESCRIPCIÓN -->
+                                <td>
+                                    @item.Descripcion
+                                </td>
+
+                                <!-- ESTADO -->
+                                <td>
+
+                                    @switch (item.Estado)
+                                    {
+                                        case "Finalizado":
+                                            <span class="badge bg-success">Finalizado</span>
+                                            break;
+
+                                        case "En Proceso":
+                                            <span class="badge bg-warning text-dark">En Proceso</span>
+                                            break;
+
+                                        case "Cancelada":
+                                            <span class="badge bg-danger">Cancelada</span>
+                                            break;
+
+                                        default:
+                                            <span class="badge bg-secondary">
+                                                @(item.Estado ?? "Sin estado")
+                                            </span>
+                                            break;
+                                    }
+
+                                </td>
+
+                                <!-- COSTO -->
+                                <td>
+                                    $@item.CostoTotal
+                                </td>
+
+                                <!-- RELACIONES -->
+                                <td>
+                                    #@item.IdAsignacion
+                                </td>
+
+                                <td>
+                                    #@item.IdOrden
+                                </td>
+
+                                <td>
+                                    #@item.IdSolicitud
+                                </td>
+
+                                <!-- ACCIONES -->
+                                <td class="text-center">
+
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.IdDetalle"
+                                       class="btn btn-warning btn-sm">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+
+                                    <a asp-action="Details"
+                                       asp-route-id="@item.IdDetalle"
+                                       class="btn btn-info btn-sm text-white">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </a>
+
+                                    <!--SOFT DELETE -->
+                                    <a asp-action="Delete"
+                                    asp-route-id="@item.IdDetalle"
+                                    class="btn btn-danger btn-sm">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                    </a>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

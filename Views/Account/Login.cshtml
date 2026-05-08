@@ -1,0 +1,44 @@
+﻿@{
+    Layout = null;
+}
+<head>
+    <link rel="stylesheet" href="~/css/login.css" />
+</head>
+<body>
+    <div class="login-container">
+
+        <div class="logo">
+            TALLER XGMASS
+        </div>
+
+        <form method="post" asp-controller="Account" asp-action="Login">
+
+            <div class="input-group-custom">
+                <input type="text" name="correo" placeholder="Usuario" required />
+            </div>
+
+            <div class="input-group-custom">
+                <input type="password" name="contrasena" placeholder="Contraseña" required />
+            </div>
+
+            <button type="submit" class="btn-login">
+                Ingresar
+            </button>
+
+        </form>
+
+        <button class="btn-microsoft">
+            Iniciar sesión con Microsoft
+        </button>
+
+        <div class="forgot">
+            <a href="#">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        @if (ViewBag.Error != null)
+        {
+            <p style="color:red">@ViewBag.Error</p>
+        }
+
+    </div>
+</body>
