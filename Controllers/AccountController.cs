@@ -32,27 +32,33 @@ public class AccountController : Controller
     // =========================
     [AllowAnonymous]
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(string correo, string contrasena)
     {
-        if (string.IsNullOrEmpty(correo) || string.IsNullOrEmpty(contrasena))
+        if (string.IsNullOrWhiteSpace(correo) || string.IsNullOrWhiteSpace(contrasena))
         {
             ViewBag.Error = "Ingrese correo y contraseña";
             return View();
         }
 
-        // 🔥 SOLO USUARIOS ACTIVOS
-        var usuario = _context.Usuarios
-            .FirstOrDefault(u => u.Correo == correo && u.Estado == true);
+        var usuario = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Correo == correo);
 
         if (usuario == null)
         {
-            ViewBag.Error = "Usuario no existe o está inactivo";
+            ViewBag.Error = "Usuario no existe";
             return View();
         }
 
-        if (string.IsNullOrEmpty(usuario.Contrasena))
+        if (!usuario.Estado)
         {
-            ViewBag.Error = "Usuario sin contraseña válida";
+            ViewBag.Error = "Usuario inactivo";
+            return View();
+        }
+
+        if (string.IsNullOrWhiteSpace(usuario.Contrasena))
+        {
+            ViewBag.Error = "Usuario sin contraseña registrada";
             return View();
         }
 
@@ -71,11 +77,7 @@ public class AccountController : Controller
                 new Claim("IdUsuario", usuario.IdUsuario.ToString())
             };
 
-            var identity = new ClaimsIdentity(
-                claims,
-                CookieAuthenticationDefaults.AuthenticationScheme
-            );
-
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
 
             await HttpContext.SignInAsync(
@@ -99,5 +101,63 @@ public class AccountController : Controller
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction("Login", "Account");
+    }
+
+    // =========================
+    // CREATE USER
+    // =========================
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(Usuario usuario)
+    {
+        if (!ModelState.IsValid)
+            return View(usuario);
+
+        if (string.IsNullOrWhiteSpace(usuario.Contrasena))
+        {
+            ModelState.AddModelError("Contrasena", "La contraseña es obligatoria");
+            return View(usuario);
+        }
+
+        usuario.Contrasena = hasher.HashPassword(usuario, usuario.Contrasena);
+        usuario.Estado = true;
+
+        _context.Usuarios.Add(usuario);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Index", "Usuarios");
+    }
+
+    // =========================
+    // EDIT USER (FIX FINAL)
+    // =========================
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(
+        int id,
+        Usuario usuario,
+        [FromForm] string? nuevaContrasena)
+    {
+        var userDb = await _context.Usuarios.FindAsync(id);
+
+        if (userDb == null)
+            return NotFound();
+
+        // 🔄 UPDATE DATA
+        userDb.Nombre = usuario.Nombre;
+        userDb.Correo = usuario.Correo;
+        userDb.IdRol = usuario.IdRol;
+        userDb.Estado = usuario.Estado;
+
+        // 🔐 PASSWORD ONLY IF CHANGED
+        if (!string.IsNullOrWhiteSpace(nuevaContrasena))
+        {
+            userDb.Contrasena = hasher.HashPassword(userDb, nuevaContrasena);
+        }
+
+        _context.Usuarios.Update(userDb);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Index", "Usuarios");
     }
 }
