@@ -128,36 +128,32 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Usuarios");
     }
 
-    // =========================
-    // EDIT USER (FIX FINAL)
-    // =========================
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(
-        int id,
-        Usuario usuario,
-        [FromForm] string? nuevaContrasena)
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> Edit(
+    Usuario usuario,
+    [FromForm] string? nuevaContrasena)
+{
+    var userDb = await _context.Usuarios
+        .FindAsync(usuario.IdUsuario);
+
+    if (userDb == null)
+        return NotFound();
+
+    // ACTUALIZAR DATOS
+    userDb.Nombre = usuario.Nombre;
+    userDb.Correo = usuario.Correo;
+    userDb.IdRol = usuario.IdRol;
+    userDb.Estado = usuario.Estado;
+
+    // ACTUALIZAR CONTRASEÑA SOLO SI ESCRIBIÓ UNA
+    if (!string.IsNullOrWhiteSpace(nuevaContrasena))
     {
-        var userDb = await _context.Usuarios.FindAsync(id);
-
-        if (userDb == null)
-            return NotFound();
-
-        // 🔄 UPDATE DATA
-        userDb.Nombre = usuario.Nombre;
-        userDb.Correo = usuario.Correo;
-        userDb.IdRol = usuario.IdRol;
-        userDb.Estado = usuario.Estado;
-
-        // 🔐 PASSWORD ONLY IF CHANGED
-        if (!string.IsNullOrWhiteSpace(nuevaContrasena))
-        {
-            userDb.Contrasena = hasher.HashPassword(userDb, nuevaContrasena);
-        }
-
-        _context.Usuarios.Update(userDb);
-        await _context.SaveChangesAsync();
-
-        return RedirectToAction("Index", "Usuarios");
+        userDb.Contrasena = hasher.HashPassword(userDb, nuevaContrasena);
     }
+
+    await _context.SaveChangesAsync();
+
+    return RedirectToAction("Index", "Usuarios");
+}
 }
