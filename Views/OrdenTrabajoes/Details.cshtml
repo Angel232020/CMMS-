@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = "Detalle de Orden";
+
+    var estado = Model.Estado?.Trim().ToUpper();
+    bool esFinalizada = estado == "FINALIZADA";
 }
 
 <div class="container mt-4">
@@ -31,11 +34,7 @@
                     </label>
 
                     <div class="form-control bg-light">
-
-                        @(Model.FechaCreacion != null
-                            ? Model.FechaCreacion?.ToString("dd/MM/yyyy")
-                            : "Sin fecha")
-
+                        @(Model.FechaCreacion?.ToString("dd/MM/yyyy") ?? "Sin fecha")
                     </div>
 
                 </div>
@@ -49,23 +48,27 @@
 
                     <div>
 
-                        @if (Model.Estado == "Finalizada")
+                        @switch (estado)
                         {
-                            <span class="badge bg-success fs-6">
-                                @Model.Estado
-                            </span>
-                        }
-                        else if (Model.Estado == "En Proceso")
-                        {
-                            <span class="badge bg-warning text-dark fs-6">
-                                @Model.Estado
-                            </span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary fs-6">
-                                @Model.Estado
-                            </span>
+                            case "FINALIZADA":
+                                <span class="badge bg-success fs-6">FINALIZADA</span>
+                                break;
+
+                            case "EN PROCESO":
+                                <span class="badge bg-warning text-dark fs-6">EN PROCESO</span>
+                                break;
+
+                            case "PENDIENTE":
+                                <span class="badge bg-secondary fs-6">PENDIENTE</span>
+                                break;
+
+                            case "CANCELADA":
+                                <span class="badge bg-danger fs-6">CANCELADA</span>
+                                break;
+
+                            default:
+                                <span class="badge bg-dark fs-6">SIN ESTADO</span>
+                                break;
                         }
 
                     </div>
@@ -79,11 +82,8 @@
                         Descripción
                     </label>
 
-                    <div class="form-control bg-light"
-                         style="min-height: 100px;">
-
+                    <div class="form-control bg-light" style="min-height: 100px;">
                         @Model.Descripcion
-
                     </div>
 
                 </div>
@@ -96,12 +96,10 @@
                     </label>
 
                     <div class="form-control bg-light">
-
                         @(Model.IdClienteNavigation != null
                             ? Model.IdClienteNavigation.Nombres + " " +
                               Model.IdClienteNavigation.Apellidos
                             : "Sin cliente")
-
                     </div>
 
                 </div>
@@ -114,17 +112,15 @@
                     </label>
 
                     <div class="form-control bg-light">
-
                         @(Model.IdMaquinaNavigation != null
                             ? Model.IdMaquinaNavigation.Marca + " - " +
                               Model.IdMaquinaNavigation.Modelo
                             : "Sin máquina")
-
                     </div>
 
                 </div>
 
-                <!-- TIPO SERVICIO -->
+                <!-- SERVICIO -->
                 <div class="col-md-6">
 
                     <label class="fw-bold text-secondary">
@@ -132,11 +128,7 @@
                     </label>
 
                     <div class="form-control bg-light">
-
-                        @(Model.IdTipoServicioNavigation != null
-                            ? Model.IdTipoServicioNavigation.Nombre
-                            : "Sin servicio")
-
+                        @(Model.IdTipoServicioNavigation?.Nombre ?? "Sin servicio")
                     </div>
 
                 </div>
@@ -149,11 +141,7 @@
                     </label>
 
                     <div class="form-control bg-light">
-
-                        @(Model.IdUsuarioNavigation != null
-                            ? Model.IdUsuarioNavigation.Nombre
-                            : "Sin usuario")
-
+                        @(Model.IdUsuarioNavigation?.Nombre ?? "Sin usuario")
                     </div>
 
                 </div>
@@ -165,18 +153,27 @@
             <!-- BOTONES -->
             <div class="d-flex justify-content-between">
 
-                <a asp-action="Index"
-                   class="btn btn-secondary">
+                <a asp-action="Index" class="btn btn-secondary">
                     <i class="bi bi-arrow-left-circle"></i>
                     Regresar
                 </a>
 
-                <a asp-action="Edit"
-                   asp-route-id="@Model?.IdOrden"
-                   class="btn btn-warning text-white">
-                    <i class="bi bi-pencil-square"></i>
-                    Editar Orden
-                </a>
+                @* 🔴 BLOQUEO REAL *@
+                @if (!esFinalizada)
+                {
+                    <a asp-action="Edit"
+                       asp-route-id="@Model.IdOrden"
+                       class="btn btn-warning text-white">
+                        <i class="bi bi-pencil-square"></i>
+                        Editar Orden
+                    </a>
+                }
+                else
+                {
+                    <span class="badge bg-dark p-2">
+                        Orden Finalizada - Solo lectura
+                    </span>
+                }
 
             </div>
 

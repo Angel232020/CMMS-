@@ -20,7 +20,7 @@
 
         <div class="card-body">
 
-            <form asp-action="Create" method="post">
+            <form asp-controller="Account" asp-action="Create" method="post">
 
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
@@ -43,35 +43,93 @@
                     <!-- CONTRASEÑA -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Contraseña</label>
-                        <input asp-for="Contrasena" type="password" class="form-control" />
+                        <input asp-for="Contrasena"
+                               type="password"
+                               class="form-control" />
                         <span asp-validation-for="Contrasena" class="text-danger"></span>
                     </div>
 
                     <!-- ROL -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Rol</label>
-                        <select asp-for="IdRol" class="form-select" asp-items="ViewBag.Roles">
+
+                        <select asp-for="IdRol"
+                                id="IdRol"
+                                class="form-select"
+                                asp-items="ViewBag.Roles">
+
                             <option value="">Seleccione un rol</option>
+
                         </select>
+
                         <span asp-validation-for="IdRol" class="text-danger"></span>
+                    </div>
+
+                </div>
+
+                <!-- DATOS TECNICO -->
+                <div id="tecnicoFields" style="display:none;">
+
+                    <hr />
+
+                    <h5 class="text-primary">
+                        <i class="bi bi-tools"></i>
+                        Información del Técnico
+                    </h5>
+
+                    <div class="row">
+
+                        <!-- NOMBRES -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombres</label>
+                            <input name="NombresTecnico"
+                                   class="form-control" />
+                        </div>
+
+                        <!-- APELLIDOS -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Apellidos</label>
+                            <input name="ApellidosTecnico"
+                                   class="form-control" />
+                        </div>
+
+                        <!-- TELEFONO -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input name="TelefonoTecnico"
+                                   class="form-control" />
+                        </div>
+
+                        <!-- ESPECIALIDAD -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Especialidad</label>
+                            <input name="EspecialidadTecnico"
+                                   class="form-control" />
+                        </div>
+
                     </div>
 
                 </div>
 
                 <hr />
 
+                <!-- BOTONES -->
                 <div class="d-flex justify-content-between">
 
                     <a asp-action="Index"
                        class="btn btn-secondary">
+
                         <i class="bi bi-arrow-left-circle"></i>
                         Regresar
+
                     </a>
 
                     <button type="submit"
                             class="btn btn-primary">
+
                         <i class="bi bi-save-fill"></i>
                         Guardar
+
                     </button>
 
                 </div>
@@ -85,7 +143,34 @@
 </div>
 
 @section Scripts {
+
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+
+        const rolSelect = document.getElementById("IdRol");
+        const tecnicoFields = document.getElementById("tecnicoFields");
+
+        function toggleTecnicoFields() {
+
+            // CAMBIA EL 2 POR EL ID REAL DEL ROL TECNICO
+            if (rolSelect.value == "2") {
+
+                tecnicoFields.style.display = "block";
+
+            } else {
+
+                tecnicoFields.style.display = "none";
+
+            }
+        }
+
+        rolSelect.addEventListener("change", toggleTecnicoFields);
+
+        // EJECUTAR AL CARGAR
+        toggleTecnicoFields();
+
+    </script>
 }

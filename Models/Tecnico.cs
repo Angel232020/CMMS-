@@ -15,5 +15,7 @@ public partial class Tecnico
 
     public string? Especialidad { get; set; }
 
+    public int? id_usuario { get; set; }
+
     public virtual ICollection<Asignacion> Asignacions { get; set; } = new List<Asignacion>();
 }

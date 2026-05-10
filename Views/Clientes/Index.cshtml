@@ -1,74 +1,217 @@
-﻿@model IEnumerable<CMMS.Models.Cliente>
+﻿@model IEnumerable<CMMS.Models.Asignacion>
 
 @{
-    ViewData["Title"] = "Clientes";
+    ViewData["Title"] = "Asignaciones";
+
+    var idRol = User.FindFirst("IdRol")?.Value;
+    bool esTecnico = idRol == "2";
 }
 
 <div class="container mt-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-primary">
-            <i class="bi bi-people-fill"></i> Gestión de Clientes
+    <!-- ENCABEZADO -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+
+        <h2 class="fw-bold text-primary mb-0">
+            <i class="bi bi-person-workspace"></i>
+            Gestión de Asignaciones
         </h2>
 
-        <a asp-action="Create" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Nuevo Cliente
-        </a>
+        @if (!esTecnico)
+        {
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i>
+                Nueva Asignación
+            </a>
+        }
+
     </div>
 
-    <div class="card shadow-sm border-0">
+    <!-- CARD -->
+    <div class="card shadow border-0 rounded-4">
+
         <div class="card-body">
 
-            <table class="table table-hover align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Nombres</th>
-                        <th>Apellidos</th>
-                        <th>Teléfono</th>
-                        <th>Correo</th>
-                        <th>Dirección</th>
-                        <th class="text-center">Acciones</th>
-                    </tr>
-                </thead>
+            <div class="table-responsive">
 
-                <tbody>
-                    @foreach (var item in Model)
-                    {
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-dark">
+
                         <tr>
-                            <td>@item.Nombres</td>
-                            <td>@item.Apellidos</td>
-                            <td>@item.Telefono</td>
-                            <td>@item.Correo</td>
-                            <td>@item.Direccion</td>
 
-                            <td class="text-center">
+                            <th>Fecha</th>
 
-                                <a asp-action="Edit"
-                                   asp-route-id="@item.IdCliente"
-                                   class="btn btn-warning btn-sm">
-                                    <i class="bi bi-pencil-square"></i>
-                                </a>
+                            <th>Orden</th>
 
-                                <a asp-action="Details"
-                                   asp-route-id="@item.IdCliente"
-                                   class="btn btn-info btn-sm text-white">
-                                    <i class="bi bi-eye-fill"></i>
-                                </a>
+                            <th>Estado Orden</th>
 
-                                <a asp-action="Delete"
-                                   asp-route-id="@item.IdCliente"
-                                   class="btn btn-danger btn-sm">
-                                    <i class="bi bi-trash-fill"></i>
-                                </a>
+                            <th>Técnico</th>
 
-                            </td>
+                            <th>Asignado Por</th>
+
+                            <th class="text-center">
+                                Acciones
+                            </th>
+
                         </tr>
-                    }
-                </tbody>
 
-            </table>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <!-- FECHA -->
+                                <td>
+                                    @(item.FechaAsignacion != null
+                                        ? item.FechaAsignacion?.ToString("dd/MM/yyyy")
+                                        : "Sin fecha")
+                                </td>
+
+                                <!-- ORDEN -->
+                                <td>
+                                    @(item.IdOrdenNavigation != null
+                                        ? "Orden #" + item.IdOrdenNavigation.IdOrden
+                                        : "Sin orden")
+                                </td>
+
+                                <!-- ESTADO -->
+                                <td>
+
+                                    @if (item.IdOrdenNavigation?.Estado == "PENDIENTE")
+                                    {
+                                        <span class="badge bg-warning text-dark">
+                                            PENDIENTE
+                                        </span>
+                                    }
+                                    else if (item.IdOrdenNavigation?.Estado == "EN PROCESO")
+                                    {
+                                        <span class="badge bg-primary">
+                                            EN PROCESO
+                                        </span>
+                                    }
+                                    else if (item.IdOrdenNavigation?.Estado == "FINALIZADA")
+                                    {
+                                        <span class="badge bg-success">
+                                            FINALIZADA
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            @item.IdOrdenNavigation?.Estado
+                                        </span>
+                                    }
+
+                                </td>
+
+                                <!-- TECNICO -->
+                                <td>
+                                    @(item.IdTecnicoNavigation != null
+                                        ? item.IdTecnicoNavigation.Nombres + " " +
+                                          item.IdTecnicoNavigation.Apellidos
+                                        : "Sin técnico")
+                                </td>
+
+                                <!-- USUARIO -->
+                                <td>
+                                    @(item.IdUsuarioNavigation != null
+                                        ? item.IdUsuarioNavigation.Nombre
+                                        : "Sin usuario")
+                                </td>
+
+                                <!-- ACCIONES -->
+                                <td class="text-center">
+
+                                    <!-- VER -->
+                                    <a asp-action="Details"
+                                       asp-route-id="@item.IdAsignacion"
+                                       class="btn btn-info btn-sm text-white">
+
+                                        <i class="bi bi-eye-fill"></i>
+
+                                    </a>
+
+                                    @if (!esTecnico)
+                                    {
+                                        <!-- EDITAR -->
+                                        <a asp-action="Edit"
+                                           asp-route-id="@item.IdAsignacion"
+                                           class="btn btn-warning btn-sm">
+
+                                            <i class="bi bi-pencil-square"></i>
+
+                                        </a>
+
+                                        <!-- CANCELAR -->
+                                        <a asp-action="Delete"
+                                           asp-route-id="@item.IdAsignacion"
+                                           class="btn btn-danger btn-sm">
+
+                                            <i class="bi bi-x-circle"></i>
+
+                                        </a>
+                                    }
+
+                                    @if (esTecnico)
+                                    {
+                                        <!-- INICIAR -->
+                                        @if (item.IdOrdenNavigation?.Estado == "PENDIENTE")
+                                        {
+                                            <form asp-action="Iniciar"
+                                                  asp-route-id="@item.IdAsignacion"
+                                                  method="post"
+                                                  class="d-inline">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <button type="submit"
+                                                        class="btn btn-primary btn-sm">
+
+                                                    <i class="bi bi-play-fill"></i>
+
+                                                </button>
+
+                                            </form>
+                                        }
+
+                                        <!-- FINALIZAR -->
+                                        @if (item.IdOrdenNavigation?.Estado == "EN PROCESO")
+                                        {
+                                            <form asp-action="Finalizar"
+                                                  asp-route-id="@item.IdAsignacion"
+                                                  method="post"
+                                                  class="d-inline">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <button type="submit"
+                                                        class="btn btn-success btn-sm">
+
+                                                    <i class="bi bi-check2-circle"></i>
+
+                                                </button>
+
+                                            </form>
+                                        }
+                                    }
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
 
         </div>
+
     </div>
 
 </div>

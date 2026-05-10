@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -18,24 +17,54 @@ namespace CMMS.Controllers
             _context = context;
         }
 
-        // GET: Asignacions
+        // =====================================================
+        // INDEX
+        // =====================================================
         public async Task<IActionResult> Index()
         {
-            var cmmsContext = _context.Asignacions
+            if (!User.Identity!.IsAuthenticated)
+                return RedirectToAction("Login", "Account");
+
+            var idUsuarioClaim = User.FindFirst("IdUsuario");
+            var idRolClaim = User.FindFirst("IdRol");
+
+            if (idUsuarioClaim == null || idRolClaim == null)
+                return RedirectToAction("Login", "Account");
+
+            int idUsuario = int.Parse(idUsuarioClaim.Value);
+            int idRol = int.Parse(idRolClaim.Value);
+
+            IQueryable<Asignacion> query = _context.Asignacions
+                .AsNoTracking()
                 .Where(a => a.Estado == "ACTIVA")
                 .Include(a => a.IdOrdenNavigation)
                 .Include(a => a.IdTecnicoNavigation)
                 .Include(a => a.IdUsuarioNavigation);
 
-            return View(await cmmsContext.ToListAsync());
+            if (idRol == 2)
+            {
+                var tecnico = await _context.Tecnicos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.id_usuario == idUsuario);
+
+                if (tecnico == null)
+                    return Forbid();
+
+                query = query.Where(a => a.IdTecnico == tecnico.IdTecnico);
+            }
+
+            return View(await query.ToListAsync());
         }
 
-        // GET: Asignacions/Details/5
+        // =====================================================
+        // DETAILS
+        // =====================================================
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
 
             var asignacion = await _context.Asignacions
+                .AsNoTracking()
                 .Include(a => a.IdOrdenNavigation)
                 .Include(a => a.IdTecnicoNavigation)
                 .Include(a => a.IdUsuarioNavigation)
@@ -46,104 +75,106 @@ namespace CMMS.Controllers
             return View(asignacion);
         }
 
-        // GET: Create
+        // =====================================================
+        // CREATE (GET)
+        // =====================================================
         public IActionResult Create()
         {
-            ViewData["IdOrden"] = new SelectList(
-                _context.OrdenTrabajos.Select(o => new
-                {
-                    o.IdOrden,
-                    Texto = "Orden #" + o.IdOrden + " - " + o.Estado
-                }),
-                "IdOrden",
-                "Texto"
-            );
-
-            ViewData["IdTecnico"] = new SelectList(
-                _context.Tecnicos.Select(t => new
-                {
-                    t.IdTecnico,
-                    Texto = t.Nombres + " " + t.Apellidos
-                }),
-                "IdTecnico",
-                "Texto"
-            );
-
-            ViewData["IdUsuario"] = new SelectList(
-                _context.Usuarios.Select(u => new
-                {
-                    u.IdUsuario,
-                    Texto = u.Nombre
-                }),
-                "IdUsuario",
-                "Texto"
-            );
-
+            CargarCombos();
             return View();
         }
 
-        // POST: Create
+        // =====================================================
+        // CREATE (POST) - VALIDACIÓN REAL
+        // =====================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("IdAsignacion,IdOrden,IdTecnico,FechaAsignacion,IdUsuario")] Asignacion asignacion)
+        public async Task<IActionResult> Create(Asignacion asignacion)
         {
+            var orden = await _context.OrdenTrabajos
+                .FirstOrDefaultAsync(o => o.IdOrden == asignacion.IdOrden);
+
+            if (orden == null || orden.Estado != "PENDIENTE")
+            {
+                ModelState.AddModelError("", "Solo se pueden asignar órdenes PENDIENTES");
+                CargarCombos(asignacion);
+                return View(asignacion);
+            }
+
             if (ModelState.IsValid)
             {
                 asignacion.Estado = "ACTIVA";
+
                 _context.Add(asignacion);
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
 
+            CargarCombos(asignacion);
             return View(asignacion);
         }
 
-        // GET: Edit
+        // =====================================================
+        // INICIAR
+        // =====================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Iniciar(int id)
+        {
+            var asignacion = await _context.Asignacions.FindAsync(id);
+            if (asignacion == null) return NotFound();
+
+            var orden = await _context.OrdenTrabajos
+                .FirstOrDefaultAsync(o => o.IdOrden == asignacion.IdOrden);
+
+            if (orden == null) return NotFound();
+
+            orden.Estado = "EN PROCESO";
+
+            _context.Update(orden);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // =====================================================
+        // FINALIZAR
+        // =====================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Finalizar(int id)
+        {
+            var asignacion = await _context.Asignacions.FindAsync(id);
+            if (asignacion == null) return NotFound();
+
+            var orden = await _context.OrdenTrabajos
+                .FirstOrDefaultAsync(o => o.IdOrden == asignacion.IdOrden);
+
+            if (orden == null) return NotFound();
+
+            orden.Estado = "FINALIZADA";
+
+            _context.Update(orden);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // =====================================================
+        // EDIT
+        // =====================================================
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
 
             var asignacion = await _context.Asignacions.FindAsync(id);
-
             if (asignacion == null) return NotFound();
 
-            ViewData["IdOrden"] = new SelectList(
-                _context.OrdenTrabajos.Select(o => new
-                {
-                    o.IdOrden,
-                    Texto = "Orden #" + o.IdOrden + " - " + o.Estado
-                }),
-                "IdOrden",
-                "Texto",
-                asignacion.IdOrden
-            );
-
-            ViewData["IdTecnico"] = new SelectList(
-                _context.Tecnicos.Select(t => new
-                {
-                    t.IdTecnico,
-                    Texto = t.Nombres + " " + t.Apellidos
-                }),
-                "IdTecnico",
-                "Texto",
-                asignacion.IdTecnico
-            );
-
-            ViewData["IdUsuario"] = new SelectList(
-                _context.Usuarios.Select(u => new
-                {
-                    u.IdUsuario,
-                    Texto = u.Nombre
-                }),
-                "IdUsuario",
-                "Texto",
-                asignacion.IdUsuario
-            );
-
+            CargarCombos(asignacion);
             return View(asignacion);
         }
 
-        // POST: Edit
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Asignacion asignacion)
@@ -153,34 +184,24 @@ namespace CMMS.Controllers
 
             if (ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(asignacion);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!AsignacionExists(asignacion.IdAsignacion))
-                        return NotFound();
-                    else
-                        throw;
-                }
-
+                _context.Update(asignacion);
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
 
+            CargarCombos(asignacion);
             return View(asignacion);
         }
 
-        // GET: Delete (confirmación)
+        // =====================================================
+        // DELETE (SOFT)
+        // =====================================================
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
 
             var asignacion = await _context.Asignacions
                 .Include(a => a.IdOrdenNavigation)
-                .Include(a => a.IdTecnicoNavigation)
-                .Include(a => a.IdUsuarioNavigation)
                 .FirstOrDefaultAsync(m => m.IdAsignacion == id);
 
             if (asignacion == null) return NotFound();
@@ -188,7 +209,6 @@ namespace CMMS.Controllers
             return View(asignacion);
         }
 
-        // POST: CANCELAR (soft delete)
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -199,11 +219,52 @@ namespace CMMS.Controllers
             {
                 asignacion.Estado = "CANCELADA";
                 _context.Update(asignacion);
+                await _context.SaveChangesAsync();
             }
 
-            await _context.SaveChangesAsync();
-
             return RedirectToAction(nameof(Index));
+        }
+
+        // =====================================================
+        // COMBOS (SOLO PENDIENTES)
+        // =====================================================
+        private void CargarCombos(Asignacion? asignacion = null)
+        {
+            // 🔥 SOLO ORDENES PENDIENTES
+            ViewData["IdOrden"] = new SelectList(
+                _context.OrdenTrabajos
+                    .Where(o => o.Estado == "PENDIENTE")
+                    .Select(o => new
+                    {
+                        o.IdOrden,
+                        Texto = "Orden #" + o.IdOrden + " - PENDIENTE"
+                    }),
+                "IdOrden",
+                "Texto",
+                asignacion?.IdOrden
+            );
+
+            ViewData["IdTecnico"] = new SelectList(
+                _context.Tecnicos.Select(t => new
+                {
+                    t.IdTecnico,
+                    Texto = t.Nombres + " " + t.Apellidos
+                }),
+                "IdTecnico",
+                "Texto",
+                asignacion?.IdTecnico
+            );
+
+            ViewData["IdUsuario"] = new SelectList(
+                _context.Usuarios.Select(u => new
+                {
+                    u.IdUsuario,
+                    Texto = u.Nombre
+                }),
+                "IdUsuario",
+                "Texto",
+                asignacion?.IdUsuario
+            );
         }
 
         private bool AsignacionExists(int id)

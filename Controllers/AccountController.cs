@@ -10,7 +10,8 @@ using Microsoft.AspNetCore.Identity;
 public class AccountController : Controller
 {
     private readonly CmmsContext _context;
-    private readonly PasswordHasher<Usuario> hasher = new PasswordHasher<Usuario>();
+    private readonly PasswordHasher<Usuario> hasher =
+        new PasswordHasher<Usuario>();
 
     public AccountController(CmmsContext context)
     {
@@ -33,9 +34,12 @@ public class AccountController : Controller
     [AllowAnonymous]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(string correo, string contrasena)
+    public async Task<IActionResult> Login(
+        string correo,
+        string contrasena)
     {
-        if (string.IsNullOrWhiteSpace(correo) || string.IsNullOrWhiteSpace(contrasena))
+        if (string.IsNullOrWhiteSpace(correo) ||
+            string.IsNullOrWhiteSpace(contrasena))
         {
             ViewBag.Error = "Ingrese correo y contraseña";
             return View();
@@ -72,12 +76,27 @@ public class AccountController : Controller
         {
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, usuario.Correo ?? ""),
-                new Claim("IdRol", usuario.IdRol?.ToString() ?? "0"),
-                new Claim("IdUsuario", usuario.IdUsuario.ToString())
+                new Claim(
+                    ClaimTypes.Name,
+                    usuario.Correo ?? ""
+                ),
+
+                new Claim(
+                    "IdRol",
+                    usuario.IdRol?.ToString() ?? "0"
+                ),
+
+                new Claim(
+                    "IdUsuario",
+                    usuario.IdUsuario.ToString()
+                )
             };
 
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var identity = new ClaimsIdentity(
+                claims,
+                CookieAuthenticationDefaults.AuthenticationScheme
+            );
+
             var principal = new ClaimsPrincipal(identity);
 
             await HttpContext.SignInAsync(
@@ -89,6 +108,7 @@ public class AccountController : Controller
         }
 
         ViewBag.Error = "Usuario o contraseña incorrectos";
+
         return View();
     }
 
@@ -99,7 +119,10 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignOutAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme
+        );
+
         return RedirectToAction("Login", "Account");
     }
 
@@ -108,52 +131,104 @@ public class AccountController : Controller
     // =========================
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Usuario usuario)
+    public async Task<IActionResult> Create(
+        Usuario usuario,
+        string? NombresTecnico,
+        string? ApellidosTecnico,
+        string? TelefonoTecnico,
+        string? EspecialidadTecnico)
     {
         if (!ModelState.IsValid)
-            return View(usuario);
-
-        if (string.IsNullOrWhiteSpace(usuario.Contrasena))
         {
-            ModelState.AddModelError("Contrasena", "La contraseña es obligatoria");
             return View(usuario);
         }
 
-        usuario.Contrasena = hasher.HashPassword(usuario, usuario.Contrasena);
+        // VALIDAR PASSWORD
+        if (string.IsNullOrWhiteSpace(usuario.Contrasena))
+        {
+            ModelState.AddModelError(
+                "Contrasena",
+                "La contraseña es obligatoria"
+            );
+
+            return View(usuario);
+        }
+
+        // HASH PASSWORD
+        usuario.Contrasena = hasher.HashPassword(
+            usuario,
+            usuario.Contrasena
+        );
+
         usuario.Estado = true;
 
+        // GUARDAR USUARIO
         _context.Usuarios.Add(usuario);
+
         await _context.SaveChangesAsync();
+
+        // =========================
+        // CREAR TECNICO AUTOMATICAMENTE
+        // =========================
+        // CAMBIA EL 2 POR EL ID REAL
+        // DEL ROL TECNICO
+        //Console.WriteLine(usuario.IdRol);
+        //return Content($"Rol recibido: {usuario.IdRol}");
+        if (usuario.IdRol == 2)
+        {
+            Tecnico tecnico = new Tecnico
+            {
+                Nombres = NombresTecnico,
+                Apellidos = ApellidosTecnico,
+                Telefono = TelefonoTecnico,
+                Especialidad = EspecialidadTecnico,
+
+                // RELACION USUARIO
+                id_usuario = usuario.IdUsuario
+            };
+
+            _context.Tecnicos.Add(tecnico);
+
+            await _context.SaveChangesAsync();
+        }
 
         return RedirectToAction("Index", "Usuarios");
     }
 
+    // =========================
+    // EDIT USER
+    // =========================
     [HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> Edit(
-    Usuario usuario,
-    [FromForm] string? nuevaContrasena)
-{
-    var userDb = await _context.Usuarios
-        .FindAsync(usuario.IdUsuario);
-
-    if (userDb == null)
-        return NotFound();
-
-    // ACTUALIZAR DATOS
-    userDb.Nombre = usuario.Nombre;
-    userDb.Correo = usuario.Correo;
-    userDb.IdRol = usuario.IdRol;
-    userDb.Estado = usuario.Estado;
-
-    // ACTUALIZAR CONTRASEÑA SOLO SI ESCRIBIÓ UNA
-    if (!string.IsNullOrWhiteSpace(nuevaContrasena))
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(
+        Usuario usuario,
+        [FromForm] string? nuevaContrasena)
     {
-        userDb.Contrasena = hasher.HashPassword(userDb, nuevaContrasena);
+        var userDb = await _context.Usuarios
+            .FindAsync(usuario.IdUsuario);
+
+        if (userDb == null)
+        {
+            return NotFound();
+        }
+
+        // ACTUALIZAR DATOS
+        userDb.Nombre = usuario.Nombre;
+        userDb.Correo = usuario.Correo;
+        userDb.IdRol = usuario.IdRol;
+        userDb.Estado = usuario.Estado;
+
+        // ACTUALIZAR PASSWORD
+        if (!string.IsNullOrWhiteSpace(nuevaContrasena))
+        {
+            userDb.Contrasena = hasher.HashPassword(
+                userDb,
+                nuevaContrasena
+            );
+        }
+
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction("Index", "Usuarios");
     }
-
-    await _context.SaveChangesAsync();
-
-    return RedirectToAction("Index", "Usuarios");
-}
 }

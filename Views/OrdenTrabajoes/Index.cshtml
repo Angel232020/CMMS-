@@ -17,19 +17,13 @@
         <div class="d-flex align-items-center gap-3 flex-wrap">
 
             <!-- FILTRO -->
-            <form method="get"
-                  asp-action="Index"
-                  class="d-flex align-items-center gap-2">
+            <form method="get" asp-action="Index" class="d-flex align-items-center gap-2">
 
-                <label class="fw-bold text-secondary mb-0">
-                    Estado:
-                </label>
+                <label class="fw-bold text-secondary mb-0">Estado:</label>
 
                 <select name="estado" class="form-select">
 
-                    <option value="">
-                        Todos
-                    </option>
+                    <option value="">Todos</option>
 
                     <option value="Pendiente"
                             selected="@(ViewBag.EstadoActual == "Pendiente")">
@@ -41,12 +35,11 @@
                         En Proceso
                     </option>
 
-                    <option value="Finalizado"
-                            selected="@(ViewBag.EstadoActual == "Finalizado")">
+                    <option value="Finalizada"
+                            selected="@(ViewBag.EstadoActual == "Finalizada")">
                         Finalizado
                     </option>
 
-                    <!-- 🔥 AGREGADO -->
                     <option value="Cancelada"
                             selected="@(ViewBag.EstadoActual == "Cancelada")">
                         Cancelada
@@ -64,7 +57,6 @@
 
             </form>
 
-            <!-- BOTÓN NUEVO -->
             <a asp-action="Create" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i>
                 Nueva Orden
@@ -84,7 +76,6 @@
                 <table class="table table-hover align-middle">
 
                     <thead class="table-dark">
-
                         <tr>
                             <th>Fecha</th>
                             <th>Estado</th>
@@ -92,110 +83,103 @@
                             <th>Cliente</th>
                             <th>Máquina</th>
                             <th>Tipo Servicio</th>
-                            <th>Usuario Responsable</th>
+                            <th>Usuario</th>
                             <th class="text-center">Acciones</th>
                         </tr>
-
                     </thead>
 
                     <tbody>
 
                         @foreach (var item in Model)
                         {
+                            var estado = item.Estado?.Trim().ToUpper();
+
                             <tr>
 
                                 <!-- FECHA -->
                                 <td>
-                                    @(item.FechaCreacion != null
-                                        ? item.FechaCreacion?.ToString("dd/MM/yyyy")
-                                        : "Sin fecha")
+                                    @(item.FechaCreacion?.ToString("dd/MM/yyyy") ?? "Sin fecha")
                                 </td>
 
                                 <!-- ESTADO -->
                                 <td>
+                                    @switch (estado)
+                                    {
+                                        case "FINALIZADO":
+                                        case "FINALIZADA":
+                                            <span class="badge bg-success">Finalizada</span>
+                                            break;
 
-                                    @if (item.Estado == "Finalizado")
-                                    {
-                                        <span class="badge bg-success">
-                                            @item.Estado
-                                        </span>
-                                    }
-                                    else if (item.Estado == "En Proceso")
-                                    {
-                                        <span class="badge bg-warning text-dark">
-                                            @item.Estado
-                                        </span>
-                                    }
-                                    else if (item.Estado == "Cancelada")
-                                    {
-                                        <span class="badge bg-danger">
-                                            @item.Estado
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary">
-                                            @item.Estado
-                                        </span>
-                                    }
+                                        case "EN PROCESO":
+                                            <span class="badge bg-warning text-dark">En Proceso</span>
+                                            break;
 
+                                        case "CANCELADA":
+                                            <span class="badge bg-danger">Cancelada</span>
+                                            break;
+
+                                        default:
+                                            <span class="badge bg-secondary">Pendiente</span>
+                                            break;
+                                    }
                                 </td>
 
                                 <!-- DESCRIPCIÓN -->
-                                <td>
-                                    @item.Descripcion
-                                </td>
+                                <td>@item.Descripcion</td>
 
                                 <!-- CLIENTE -->
                                 <td>
                                     @(item.IdClienteNavigation != null
-                                        ? item.IdClienteNavigation.Nombres + " " +
-                                          item.IdClienteNavigation.Apellidos
+                                        ? item.IdClienteNavigation.Nombres + " " + item.IdClienteNavigation.Apellidos
                                         : "Sin cliente")
                                 </td>
 
                                 <!-- MÁQUINA -->
                                 <td>
                                     @(item.IdMaquinaNavigation != null
-                                        ? item.IdMaquinaNavigation.Marca + " - " +
-                                          item.IdMaquinaNavigation.Modelo
+                                        ? item.IdMaquinaNavigation.Marca + " - " + item.IdMaquinaNavigation.Modelo
                                         : "Sin máquina")
                                 </td>
 
-                                <!-- TIPO SERVICIO -->
+                                <!-- SERVICIO -->
                                 <td>
-                                    @(item.IdTipoServicioNavigation != null
-                                        ? item.IdTipoServicioNavigation.Nombre
-                                        : "Sin servicio")
+                                    @(item.IdTipoServicioNavigation?.Nombre ?? "Sin servicio")
                                 </td>
 
                                 <!-- USUARIO -->
                                 <td>
-                                    @(item.IdUsuarioNavigation != null
-                                        ? item.IdUsuarioNavigation.Nombre
-                                        : "Sin usuario")
+                                    @(item.IdUsuarioNavigation?.Nombre ?? "Sin usuario")
                                 </td>
 
                                 <!-- ACCIONES -->
                                 <td class="text-center">
 
-                                    <a asp-action="Edit"
-                                       asp-route-id="@item.IdOrden"
-                                       class="btn btn-warning btn-sm">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </a>
-
+                                    <!-- VER SIEMPRE -->
                                     <a asp-action="Details"
                                        asp-route-id="@item.IdOrden"
                                        class="btn btn-info btn-sm text-white">
                                         <i class="bi bi-eye-fill"></i>
                                     </a>
 
-                                    <a asp-action="Delete"
-                                       asp-route-id="@item.IdOrden"
-                                       class="btn btn-danger btn-sm">
-                                        <i class="bi bi-x-circle"></i>
-                                    </a>
+                                    @* 🔴 SI NO ESTÁ FINALIZADA SE PUEDE EDITAR *@
+                                    @if (estado != "FINALIZADO" && estado != "FINALIZADA")
+                                    {
+                                        <a asp-action="Edit"
+                                           asp-route-id="@item.IdOrden"
+                                           class="btn btn-warning btn-sm">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+
+                                        <a asp-action="Delete"
+                                           asp-route-id="@item.IdOrden"
+                                           class="btn btn-danger btn-sm">
+                                            <i class="bi bi-x-circle"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-dark">Cerrada</span>
+                                    }
 
                                 </td>
 
