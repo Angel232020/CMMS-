@@ -21,13 +21,44 @@ namespace CMMS.Controllers
         // =====================================================
         public async Task<IActionResult> Index(string estado)
         {
+            var idRol = User.FindFirst("IdRol")?.Value;
+            var idUsuario = User.FindFirst("IdUsuario")?.Value;
+
             var query = _context.OrdenTrabajos
                 .Include(o => o.IdClienteNavigation)
                 .Include(o => o.IdMaquinaNavigation)
                 .Include(o => o.IdTipoServicioNavigation)
-                .Include(o => o.IdUsuarioNavigation)
+                .Include(o => o.Asignacions)
+                    .ThenInclude(a => a.IdTecnicoNavigation)
                 .AsQueryable();
 
+            // =========================
+            // TECNICO SOLO SUS ORDENES
+            // =========================
+            if (idRol == "2")
+            {
+                if (int.TryParse(idUsuario, out int userId))
+                {
+                    var idTecnico = _context.Tecnicos
+                        .Where(t => t.id_usuario == userId)
+                        .Select(t => t.IdTecnico)
+                        .FirstOrDefault();
+
+                    var idsOrdenes = _context.Asignacions
+                        .Where(a => a.IdTecnico == idTecnico)
+                        .Select(a => a.IdOrden);
+
+                    query = query.Where(o => idsOrdenes.Contains(o.IdOrden));
+                }
+                else
+                {
+                    query = query.Where(o => false);
+                }
+            }
+
+            // =========================
+            // FILTRO ESTADO
+            // =========================
             if (!string.IsNullOrWhiteSpace(estado))
             {
                 query = query.Where(o => o.Estado == estado);
@@ -39,28 +70,31 @@ namespace CMMS.Controllers
         }
 
         // =====================================================
-        // DETAILS
+        // DETAILS (🔥 CLAVE PARA REPUESTOS)
         // =====================================================
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int id)
         {
-            if (id == null)
-                return NotFound();
-
             var orden = await _context.OrdenTrabajos
                 .Include(o => o.IdClienteNavigation)
                 .Include(o => o.IdMaquinaNavigation)
                 .Include(o => o.IdTipoServicioNavigation)
                 .Include(o => o.IdUsuarioNavigation)
+
+                // 🔥 ASIGNACIONES + REPUESTOS
+                .Include(o => o.Asignacions)
+                    .ThenInclude(a => a.SolicitudRepuestos)
+                        .ThenInclude(s => s.IdRepuestoNavigation)
+
                 .FirstOrDefaultAsync(o => o.IdOrden == id);
 
             if (orden == null)
-                return NotFound();
+                return RedirectToAction(nameof(Index));
 
             return View(orden);
         }
 
         // =====================================================
-        // CREATE
+        // CREATE ORDEN
         // =====================================================
         public IActionResult Create()
         {
@@ -69,12 +103,10 @@ namespace CMMS.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(OrdenTrabajo orden)
         {
             if (ModelState.IsValid)
             {
-                // 🔒 SIEMPRE PENDIENTE AL CREAR
                 orden.Estado = "PENDIENTE";
 
                 _context.Add(orden);
@@ -88,45 +120,37 @@ namespace CMMS.Controllers
         }
 
         // =====================================================
-        // EDIT GET
+        // EDIT
         // =====================================================
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(int id)
         {
-            if (id == null)
-                return NotFound();
-
-            var orden = await _context.OrdenTrabajos.FindAsync(id);
+            var orden = await _context.OrdenTrabajos
+                .Include(o => o.Asignacions)
+                .FirstOrDefaultAsync(o => o.IdOrden == id);
 
             if (orden == null)
                 return NotFound();
 
-            // 🔒 BLOQUEO FINALIZADA
-            if (orden.Estado?.Trim().ToUpper() == "FINALIZADA")
-                return RedirectToAction(nameof(Index));
+            if (!PuedeAcceder(orden))
+                return Forbid();
 
             CargarCombos(orden);
             return View(orden);
         }
 
-        // =====================================================
-        // EDIT POST
-        // =====================================================
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, OrdenTrabajo ordenTrabajo)
         {
-            if (id != ordenTrabajo.IdOrden)
-                return NotFound();
-
-            var db = await _context.OrdenTrabajos
-                .FirstOrDefaultAsync(o => o.IdOrden == id);
+            var db = await _context.OrdenTrabajos.FindAsync(id);
 
             if (db == null)
                 return NotFound();
 
-            // 🔒 BLOQUEO REAL FINALIZADA
-            if (db.Estado?.Trim().ToUpper() == "FINALIZADA")
-                return BadRequest("No se puede editar una orden finalizada");
+            if (!PuedeAcceder(db))
+                return Forbid();
+
+            if (db.Estado?.ToUpper() == "FINALIZADA")
+                return BadRequest("Orden finalizada");
 
             if (ModelState.IsValid)
             {
@@ -134,10 +158,8 @@ namespace CMMS.Controllers
                 db.IdCliente = ordenTrabajo.IdCliente;
                 db.IdMaquina = ordenTrabajo.IdMaquina;
                 db.IdTipoServicio = ordenTrabajo.IdTipoServicio;
-                db.IdUsuario = ordenTrabajo.IdUsuario;
 
                 await _context.SaveChangesAsync();
-
                 return RedirectToAction(nameof(Index));
             }
 
@@ -146,39 +168,20 @@ namespace CMMS.Controllers
         }
 
         // =====================================================
-        // DELETE GET
+        // DELETE
         // =====================================================
-        public async Task<IActionResult> Delete(int? id)
+        [HttpPost]
+        public async Task<IActionResult> Delete(int id)
         {
-            if (id == null)
-                return NotFound();
-
             var orden = await _context.OrdenTrabajos
-                .Include(o => o.IdClienteNavigation)
-                .Include(o => o.IdMaquinaNavigation)
+                .Include(o => o.Asignacions)
                 .FirstOrDefaultAsync(o => o.IdOrden == id);
 
             if (orden == null)
                 return NotFound();
 
-            return View(orden);
-        }
-
-        // =====================================================
-        // DELETE POST (SOFT DELETE)
-        // =====================================================
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var orden = await _context.OrdenTrabajos.FindAsync(id);
-
-            if (orden == null)
-                return NotFound();
-
-            // 🔒 BLOQUEO FINALIZADA
-            if (orden.Estado?.Trim().ToUpper() == "FINALIZADA")
-                return BadRequest("No se puede eliminar una orden finalizada");
+            if (!PuedeAcceder(orden))
+                return Forbid();
 
             orden.Estado = "CANCELADA";
 
@@ -186,6 +189,30 @@ namespace CMMS.Controllers
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
+        }
+
+        // =====================================================
+        // SEGURIDAD
+        // =====================================================
+        private bool PuedeAcceder(OrdenTrabajo orden)
+        {
+            var idRol = User.FindFirst("IdRol")?.Value;
+            var idUsuario = User.FindFirst("IdUsuario")?.Value;
+
+            if (idRol == "1")
+                return true;
+
+            if (idRol == "2" && int.TryParse(idUsuario, out int userId))
+            {
+                var idTecnico = _context.Tecnicos
+                    .Where(t => t.id_usuario == userId)
+                    .Select(t => t.IdTecnico)
+                    .FirstOrDefault();
+
+                return orden.Asignacions.Any(a => a.IdTecnico == idTecnico);
+            }
+
+            return false;
         }
 
         // =====================================================
@@ -221,21 +248,6 @@ namespace CMMS.Controllers
                 "Nombre",
                 orden?.IdTipoServicio
             );
-
-            ViewData["IdUsuario"] = new SelectList(
-                _context.Usuarios,
-                "IdUsuario",
-                "Nombre",
-                orden?.IdUsuario
-            );
-        }
-
-        // =====================================================
-        // EXISTS
-        // =====================================================
-        private bool OrdenTrabajoExists(int id)
-        {
-            return _context.OrdenTrabajos.Any(e => e.IdOrden == id);
         }
     }
 }

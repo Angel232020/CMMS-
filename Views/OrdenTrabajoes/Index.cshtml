@@ -2,6 +2,10 @@
 
 @{
     ViewData["Title"] = "Órdenes de Trabajo";
+
+    var idRol = User.FindFirst("IdRol")?.Value;
+    bool esTecnico = idRol == "2";
+    bool esAdmin = idRol == "1";
 }
 
 <div class="container mt-4">
@@ -25,25 +29,10 @@
 
                     <option value="">Todos</option>
 
-                    <option value="Pendiente"
-                            selected="@(ViewBag.EstadoActual == "Pendiente")">
-                        Pendiente
-                    </option>
-
-                    <option value="En Proceso"
-                            selected="@(ViewBag.EstadoActual == "En Proceso")">
-                        En Proceso
-                    </option>
-
-                    <option value="Finalizada"
-                            selected="@(ViewBag.EstadoActual == "Finalizada")">
-                        Finalizado
-                    </option>
-
-                    <option value="Cancelada"
-                            selected="@(ViewBag.EstadoActual == "Cancelada")">
-                        Cancelada
-                    </option>
+                    <option value="Pendiente" selected="@(ViewBag.EstadoActual == "Pendiente")">Pendiente</option>
+                    <option value="En Proceso" selected="@(ViewBag.EstadoActual == "En Proceso")">En Proceso</option>
+                    <option value="Finalizada" selected="@(ViewBag.EstadoActual == "Finalizada")">Finalizado</option>
+                    <option value="Cancelada" selected="@(ViewBag.EstadoActual == "Cancelada")">Cancelada</option>
 
                 </select>
 
@@ -57,143 +46,233 @@
 
             </form>
 
-            <a asp-action="Create" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i>
-                Nueva Orden
-            </a>
+            <!-- SOLO ADMIN CREA -->
+            @if (esAdmin)
+            {
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i>
+                    Nueva Orden
+                </a>
+            }
 
         </div>
 
     </div>
 
-    <!-- TABLA -->
-    <div class="card shadow border-0 rounded-4">
+    <!-- ===================================================== -->
+    <!-- 🔧 VISTA TECNICO (SIMPLIFICADA) -->
+    <!-- ===================================================== -->
+    @if (esTecnico)
+    {
+        <div class="card shadow border-0 rounded-4">
 
-        <div class="card-body">
+            <div class="card-body">
 
-            <div class="table-responsive">
+                <div class="table-responsive">
 
-                <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle">
 
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Estado</th>
-                            <th>Descripción</th>
-                            <th>Cliente</th>
-                            <th>Máquina</th>
-                            <th>Tipo Servicio</th>
-                            <th>Usuario</th>
-                            <th class="text-center">Acciones</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-
-                        @foreach (var item in Model)
-                        {
-                            var estado = item.Estado?.Trim().ToUpper();
-
+                        <thead class="table-dark">
                             <tr>
-
-                                <!-- FECHA -->
-                                <td>
-                                    @(item.FechaCreacion?.ToString("dd/MM/yyyy") ?? "Sin fecha")
-                                </td>
-
-                                <!-- ESTADO -->
-                                <td>
-                                    @switch (estado)
-                                    {
-                                        case "FINALIZADO":
-                                        case "FINALIZADA":
-                                            <span class="badge bg-success">Finalizada</span>
-                                            break;
-
-                                        case "EN PROCESO":
-                                            <span class="badge bg-warning text-dark">En Proceso</span>
-                                            break;
-
-                                        case "CANCELADA":
-                                            <span class="badge bg-danger">Cancelada</span>
-                                            break;
-
-                                        default:
-                                            <span class="badge bg-secondary">Pendiente</span>
-                                            break;
-                                    }
-                                </td>
-
-                                <!-- DESCRIPCIÓN -->
-                                <td>@item.Descripcion</td>
-
-                                <!-- CLIENTE -->
-                                <td>
-                                    @(item.IdClienteNavigation != null
-                                        ? item.IdClienteNavigation.Nombres + " " + item.IdClienteNavigation.Apellidos
-                                        : "Sin cliente")
-                                </td>
-
-                                <!-- MÁQUINA -->
-                                <td>
-                                    @(item.IdMaquinaNavigation != null
-                                        ? item.IdMaquinaNavigation.Marca + " - " + item.IdMaquinaNavigation.Modelo
-                                        : "Sin máquina")
-                                </td>
-
-                                <!-- SERVICIO -->
-                                <td>
-                                    @(item.IdTipoServicioNavigation?.Nombre ?? "Sin servicio")
-                                </td>
-
-                                <!-- USUARIO -->
-                                <td>
-                                    @(item.IdUsuarioNavigation?.Nombre ?? "Sin usuario")
-                                </td>
-
-                                <!-- ACCIONES -->
-                                <td class="text-center">
-
-                                    <!-- VER SIEMPRE -->
-                                    <a asp-action="Details"
-                                       asp-route-id="@item.IdOrden"
-                                       class="btn btn-info btn-sm text-white">
-                                        <i class="bi bi-eye-fill"></i>
-                                    </a>
-
-                                    @* 🔴 SI NO ESTÁ FINALIZADA SE PUEDE EDITAR *@
-                                    @if (estado != "FINALIZADO" && estado != "FINALIZADA")
-                                    {
-                                        <a asp-action="Edit"
-                                           asp-route-id="@item.IdOrden"
-                                           class="btn btn-warning btn-sm">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </a>
-
-                                        <a asp-action="Delete"
-                                           asp-route-id="@item.IdOrden"
-                                           class="btn btn-danger btn-sm">
-                                            <i class="bi bi-x-circle"></i>
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-dark">Cerrada</span>
-                                    }
-
-                                </td>
-
+                                <th>Orden</th>
+                                <th>Cliente</th>
+                                <th>Máquina</th>
+                                <th>Estado</th>
+                                <th class="text-center">Acción</th>
                             </tr>
-                        }
+                        </thead>
 
-                    </tbody>
+                        <tbody>
 
-                </table>
+                            @foreach (var item in Model)
+                            {
+                                var estado = item.Estado?.Trim().ToUpper();
+
+                                <tr>
+
+                                    <td>#@item.IdOrden</td>
+
+                                    <td>
+                                        @(item.IdClienteNavigation != null
+                                            ? item.IdClienteNavigation.Nombres + " " + item.IdClienteNavigation.Apellidos
+                                            : "Sin cliente")
+                                    </td>
+
+                                    <td>
+                                        @(item.IdMaquinaNavigation != null
+                                            ? item.IdMaquinaNavigation.Marca + " - " + item.IdMaquinaNavigation.Modelo
+                                            : "Sin máquina")
+                                    </td>
+
+                                    <td>
+                                        @switch (estado)
+                                        {
+                                            case "FINALIZADO":
+                                            case "FINALIZADA":
+                                                <span class="badge bg-success">Finalizada</span>
+                                                break;
+
+                                            case "EN PROCESO":
+                                                <span class="badge bg-warning text-dark">En Proceso</span>
+                                                break;
+
+                                            case "CANCELADA":
+                                                <span class="badge bg-danger">Cancelada</span>
+                                                break;
+
+                                            default:
+                                                <span class="badge bg-secondary">Pendiente</span>
+                                                break;
+                                        }
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.IdOrden"
+                                           class="btn btn-info btn-sm text-white">
+                                            <i class="bi bi-eye-fill"></i>
+                                        </a>
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
 
             </div>
 
         </div>
+    }
 
-    </div>
+    <!-- ===================================================== -->
+    <!-- 👨‍💼 VISTA ADMIN (COMPLETA ORIGINAL) -->
+    <!-- ===================================================== -->
+    @if (esAdmin)
+    {
+        <div class="card shadow border-0 rounded-4">
+
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle">
+
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Descripción</th>
+                                <th>Cliente</th>
+                                <th>Máquina</th>
+                                <th>Servicio</th>
+                                <th>Usuario</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var item in Model)
+                            {
+                                var estado = item.Estado?.Trim().ToUpper();
+
+                                <tr>
+
+                                    <td>
+                                        @(item.FechaCreacion?.ToString("dd/MM/yyyy") ?? "Sin fecha")
+                                    </td>
+
+                                    <td>
+                                        @switch (estado)
+                                        {
+                                            case "FINALIZADO":
+                                            case "FINALIZADA":
+                                                <span class="badge bg-success">Finalizada</span>
+                                                break;
+
+                                            case "EN PROCESO":
+                                                <span class="badge bg-warning text-dark">En Proceso</span>
+                                                break;
+
+                                            case "CANCELADA":
+                                                <span class="badge bg-danger">Cancelada</span>
+                                                break;
+
+                                            default:
+                                                <span class="badge bg-secondary">Pendiente</span>
+                                                break;
+                                        }
+                                    </td>
+
+                                    <td>@item.Descripcion</td>
+
+                                    <td>
+                                        @(item.IdClienteNavigation != null
+                                            ? item.IdClienteNavigation.Nombres + " " + item.IdClienteNavigation.Apellidos
+                                            : "Sin cliente")
+                                    </td>
+
+                                    <td>
+                                        @(item.IdMaquinaNavigation != null
+                                            ? item.IdMaquinaNavigation.Marca + " - " + item.IdMaquinaNavigation.Modelo
+                                            : "Sin máquina")
+                                    </td>
+
+                                    <td>
+                                        @(item.IdTipoServicioNavigation?.Nombre ?? "Sin servicio")
+                                    </td>
+
+                                    <td>
+                                        @(item.IdUsuarioNavigation?.Nombre ?? "Sin usuario")
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.IdOrden"
+                                           class="btn btn-info btn-sm text-white">
+                                            <i class="bi bi-eye-fill"></i>
+                                        </a>
+
+                                        @if (estado != "FINALIZADO" && estado != "FINALIZADA")
+                                        {
+                                            <a asp-action="Edit"
+                                               asp-route-id="@item.IdOrden"
+                                               class="btn btn-warning btn-sm">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+
+                                            <a asp-action="Delete"
+                                               asp-route-id="@item.IdOrden"
+                                               class="btn btn-danger btn-sm">
+                                                <i class="bi bi-x-circle"></i>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-dark">Cerrada</span>
+                                        }
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
 
 </div>

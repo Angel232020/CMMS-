@@ -3,8 +3,14 @@
 @{
     ViewData["Title"] = "Detalle de Orden";
 
-    var estado = Model.Estado?.Trim().ToUpper();
+    var estado = Model?.Estado?.Trim().ToUpper();
     bool esFinalizada = estado == "FINALIZADA";
+
+    var idRol = User.FindFirst("IdRol")?.Value;
+    bool esTecnico = idRol == "2";
+    bool esAdmin = idRol == "1";
+
+    var asignacion = Model.Asignacions?.FirstOrDefault();
 }
 
 <div class="container mt-4">
@@ -13,172 +19,194 @@
 
         <!-- HEADER -->
         <div class="card-header bg-primary text-white">
-
             <h3 class="mb-0">
                 <i class="bi bi-clipboard2-check-fill"></i>
                 Detalle de Orden de Trabajo
             </h3>
-
         </div>
 
-        <!-- BODY -->
         <div class="card-body p-4">
 
-            <div class="row g-4">
+            @if (Model == null)
+            {
+                <div class="alert alert-danger">
+                    No se encontró la orden de trabajo.
+                </div>
+            }
+            else
+            {
+                <!-- ========================= -->
+                <!-- INFORMACIÓN GENERAL -->
+                <!-- ========================= -->
+                <div class="row g-4">
 
-                <!-- FECHA -->
-                <div class="col-md-6">
+                    <div class="col-md-6">
+                        <label class="fw-bold text-secondary">Fecha de Creación</label>
+                        <div class="form-control bg-light">
+                            @(Model.FechaCreacion?.ToString("dd/MM/yyyy") ?? "Sin fecha")
+                        </div>
+                    </div>
 
-                    <label class="fw-bold text-secondary">
-                        Fecha de Creación
-                    </label>
+                    <div class="col-md-6">
+                        <label class="fw-bold text-secondary">Estado</label>
+                        <div>
+                            @switch (estado)
+                            {
+                                case "FINALIZADA":
+                                    <span class="badge bg-success fs-6">FINALIZADA</span>
+                                    break;
 
-                    <div class="form-control bg-light">
-                        @(Model.FechaCreacion?.ToString("dd/MM/yyyy") ?? "Sin fecha")
+                                case "EN PROCESO":
+                                    <span class="badge bg-warning text-dark fs-6">EN PROCESO</span>
+                                    break;
+
+                                case "PENDIENTE":
+                                    <span class="badge bg-secondary fs-6">PENDIENTE</span>
+                                    break;
+
+                                case "CANCELADA":
+                                    <span class="badge bg-danger fs-6">CANCELADA</span>
+                                    break;
+
+                                default:
+                                    <span class="badge bg-dark fs-6">SIN ESTADO</span>
+                                    break;
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="fw-bold text-secondary">Descripción</label>
+                        <div class="form-control bg-light" style="min-height:100px;">
+                            @Model.Descripcion
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="fw-bold text-secondary">Cliente</label>
+                        <div class="form-control bg-light">
+                            @(Model.IdClienteNavigation != null
+                                ? Model.IdClienteNavigation.Nombres + " " + Model.IdClienteNavigation.Apellidos
+                                : "Sin cliente")
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="fw-bold text-secondary">Máquina</label>
+                        <div class="form-control bg-light">
+                            @(Model.IdMaquinaNavigation != null
+                                ? Model.IdMaquinaNavigation.Marca + " - " + Model.IdMaquinaNavigation.Modelo
+                                : "Sin máquina")
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="fw-bold text-secondary">Tipo de Servicio</label>
+                        <div class="form-control bg-light">
+                            @(Model.IdTipoServicioNavigation?.Nombre ?? "Sin servicio")
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="fw-bold text-secondary">Usuario Responsable</label>
+                        <div class="form-control bg-light">
+                            @(Model.IdUsuarioNavigation?.Nombre ?? "Sin usuario")
+                        </div>
                     </div>
 
                 </div>
 
-                <!-- ESTADO -->
-                <div class="col-md-6">
+                <hr class="my-4" />
 
-                    <label class="fw-bold text-secondary">
-                        Estado
-                    </label>
+                <!-- ========================= -->
+                <!-- 🔩 REPUESTOS -->
+                <!-- ========================= -->
 
-                    <div>
+                <h5 class="fw-bold text-primary">
+                    <i class="bi bi-tools"></i> Repuestos utilizados
+                </h5>
 
-                        @switch (estado)
-                        {
-                            case "FINALIZADA":
-                                <span class="badge bg-success fs-6">FINALIZADA</span>
-                                break;
-
-                            case "EN PROCESO":
-                                <span class="badge bg-warning text-dark fs-6">EN PROCESO</span>
-                                break;
-
-                            case "PENDIENTE":
-                                <span class="badge bg-secondary fs-6">PENDIENTE</span>
-                                break;
-
-                            case "CANCELADA":
-                                <span class="badge bg-danger fs-6">CANCELADA</span>
-                                break;
-
-                            default:
-                                <span class="badge bg-dark fs-6">SIN ESTADO</span>
-                                break;
-                        }
-
-                    </div>
-
-                </div>
-
-                <!-- DESCRIPCIÓN -->
-                <div class="col-md-12">
-
-                    <label class="fw-bold text-secondary">
-                        Descripción
-                    </label>
-
-                    <div class="form-control bg-light" style="min-height: 100px;">
-                        @Model.Descripcion
-                    </div>
-
-                </div>
-
-                <!-- CLIENTE -->
-                <div class="col-md-6">
-
-                    <label class="fw-bold text-secondary">
-                        Cliente
-                    </label>
-
-                    <div class="form-control bg-light">
-                        @(Model.IdClienteNavigation != null
-                            ? Model.IdClienteNavigation.Nombres + " " +
-                              Model.IdClienteNavigation.Apellidos
-                            : "Sin cliente")
-                    </div>
-
-                </div>
-
-                <!-- MÁQUINA -->
-                <div class="col-md-6">
-
-                    <label class="fw-bold text-secondary">
-                        Máquina
-                    </label>
-
-                    <div class="form-control bg-light">
-                        @(Model.IdMaquinaNavigation != null
-                            ? Model.IdMaquinaNavigation.Marca + " - " +
-                              Model.IdMaquinaNavigation.Modelo
-                            : "Sin máquina")
-                    </div>
-
-                </div>
-
-                <!-- SERVICIO -->
-                <div class="col-md-6">
-
-                    <label class="fw-bold text-secondary">
-                        Tipo de Servicio
-                    </label>
-
-                    <div class="form-control bg-light">
-                        @(Model.IdTipoServicioNavigation?.Nombre ?? "Sin servicio")
-                    </div>
-
-                </div>
-
-                <!-- USUARIO -->
-                <div class="col-md-6">
-
-                    <label class="fw-bold text-secondary">
-                        Usuario Responsable
-                    </label>
-
-                    <div class="form-control bg-light">
-                        @(Model.IdUsuarioNavigation?.Nombre ?? "Sin usuario")
-                    </div>
-
-                </div>
-
-            </div>
-
-            <hr class="my-4" />
-
-            <!-- BOTONES -->
-            <div class="d-flex justify-content-between">
-
-                <a asp-action="Index" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left-circle"></i>
-                    Regresar
-                </a>
-
-                @* 🔴 BLOQUEO REAL *@
-                @if (!esFinalizada)
+                @if (asignacion != null)
                 {
-                    <a asp-action="Edit"
-                       asp-route-id="@Model.IdOrden"
-                       class="btn btn-warning text-white">
-                        <i class="bi bi-pencil-square"></i>
-                        Editar Orden
-                    </a>
+                    var repuestos = asignacion.SolicitudRepuestos;
+
+                    if (repuestos != null && repuestos.Any())
+                    {
+                        <div class="table-responsive mt-3">
+                            <table class="table table-sm table-striped align-middle">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Repuesto</th>
+                                        <th>Cantidad</th>
+                                        <th>Fecha</th>
+                                        <th>Comentario</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in repuestos)
+                                    {
+                                        <tr>
+                                            <td>@item.IdRepuestoNavigation?.Nombre</td>
+                                            <td>@item.Cantidad</td>
+                                            <td>@item.Fecha?.ToString("dd/MM/yyyy")</td>
+                                            <td>@item.Comentarios</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning mt-3">
+                            No se han registrado repuestos en esta orden.
+                        </div>
+                    }
                 }
                 else
                 {
-                    <span class="badge bg-dark p-2">
-                        Orden Finalizada - Solo lectura
-                    </span>
+                    <div class="alert alert-warning mt-3">
+                        No hay asignación activa para esta orden.
+                    </div>
                 }
 
-            </div>
+                <hr class="my-4" />
+
+                <!-- ========================= -->
+                <!-- BOTONES -->
+                <!-- ========================= -->
+
+                <div class="d-flex justify-content-between">
+
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left-circle"></i>
+                        Regresar
+                    </a>
+
+                    @if (esAdmin && !esFinalizada)
+                    {
+                        <a asp-action="Edit"
+                           asp-route-id="@Model.IdOrden"
+                           class="btn btn-warning text-white">
+                            <i class="bi bi-pencil-square"></i>
+                            Editar Orden
+                        </a>
+                    }
+
+                    @if (esTecnico && !esFinalizada && asignacion != null)
+                    {
+                        <a asp-controller="SolicitudRepuestoes"
+                           asp-action="Create"
+                           asp-route-idAsignacion="@asignacion.IdAsignacion"
+                           class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i>
+                            Agregar Repuesto
+                        </a>
+                    }
+
+                </div>
+            }
 
         </div>
-
     </div>
-
 </div>

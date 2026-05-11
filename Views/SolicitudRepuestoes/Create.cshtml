@@ -1,46 +1,106 @@
 ﻿@model CMMS.Models.SolicitudRepuesto
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Solicitar Repuesto";
 }
 
-<h1>Create</h1>
+<div class="container mt-4">
 
-<h4>SolicitudRepuesto</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="IdAsignacion" class="control-label"></label>
-                <select asp-for="IdAsignacion" class ="form-control" asp-items="ViewBag.IdAsignacion"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="IdRepuesto" class="control-label"></label>
-                <select asp-for="IdRepuesto" class ="form-control" asp-items="ViewBag.IdRepuesto"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="Cantidad" class="control-label"></label>
-                <input asp-for="Cantidad" class="form-control" />
-                <span asp-validation-for="Cantidad" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Comentarios" class="control-label"></label>
-                <input asp-for="Comentarios" class="form-control" />
-                <span asp-validation-for="Comentarios" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+    <div class="card shadow border-0 rounded-4">
+
+        <!-- HEADER -->
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">
+                <i class="bi bi-tools"></i>
+                Solicitar Repuesto
+            </h3>
+        </div>
+
+        <!-- BODY -->
+        <div class="card-body p-4">
+
+            <form asp-action="Create" method="post">
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <!-- ID ASIGNACION OCULTO -->
+                <input type="hidden" asp-for="IdAsignacion" value="@Model?.IdAsignacion" />
+
+                <div class="row g-3">
+
+                    <!-- REPUESTO -->
+                    <div class="col-md-6">
+                        <label asp-for="IdRepuesto" class="form-label fw-bold text-secondary">
+                            Repuesto
+                        </label>
+
+                        <select asp-for="IdRepuesto" class="form-select shadow-sm" required>
+                            <option value="">Seleccione un repuesto</option>
+
+                            @foreach (var repuesto in ViewBag.Repuestos as List<CMMS.Models.Repuesto>)
+                            {
+                                <option value="@repuesto.IdRepuesto">
+                                    @repuesto.Nombre
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- CANTIDAD -->
+                    <div class="col-md-6">
+                        <label asp-for="Cantidad" class="form-label fw-bold text-secondary">
+                            Cantidad
+                        </label>
+
+                        <input asp-for="Cantidad"
+                               type="number"
+                               class="form-control shadow-sm"
+                               min="1"
+                               placeholder="Ingrese cantidad"
+                               required />
+                    </div>
+
+                    <!-- COMENTARIOS -->
+                    <div class="col-md-12">
+                        <label asp-for="Comentarios" class="form-label fw-bold text-secondary">
+                            Comentarios
+                        </label>
+
+                        <textarea asp-for="Comentarios"
+                                  class="form-control shadow-sm"
+                                  rows="3"
+                                  placeholder="Observaciones opcionales"></textarea>
+                    </div>
+
+                </div>
+
+                <hr class="my-4" />
+
+                <!-- BOTONES -->
+                <div class="d-flex justify-content-between">
+
+                    <a asp-controller="OrdenTrabajo"
+                       asp-action="Index"
+                       class="btn btn-secondary">
+                        <i class="bi bi-arrow-left-circle"></i>
+                        Regresar
+                    </a>
+
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Solicitar Repuesto
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

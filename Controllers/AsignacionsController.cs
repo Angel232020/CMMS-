@@ -14,22 +14,58 @@ namespace CMMS.Controllers
             _context = context;
         }
 
-        // ===========================
-        // INDEX
-        // ===========================
+        // =====================================================
+        // INDEX (ADMIN VE TODO / TECNICO SOLO LO SUYO)
+        // =====================================================
         public async Task<IActionResult> Index(int? idTecnico, string estado)
         {
+            var idRol = User.FindFirst("IdRol")?.Value;
+            var idUsuario = User.FindFirst("IdUsuario")?.Value;
+
             var query = _context.Asignacions
                 .Include(a => a.IdOrdenNavigation)
                 .Include(a => a.IdTecnicoNavigation)
                 .Include(a => a.IdUsuarioNavigation)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(estado))
-                query = query.Where(a => a.Estado == estado);
+            bool esTecnico = idRol == "2";
 
-            if (idTecnico.HasValue)
+            // =====================================================
+            // 🔥 OBTENER IdTecnico DESDE Usuario
+            // =====================================================
+            int? tecnicoLogueado = null;
+
+            if (esTecnico && int.TryParse(idUsuario, out int userId))
+            {
+                tecnicoLogueado = _context.Tecnicos
+                    .Where(t => t.id_usuario == userId)
+                    .Select(t => t.IdTecnico)
+                    .FirstOrDefault();
+            }
+
+            // =====================================================
+            // 🔧 FILTRO POR ROL
+            // =====================================================
+            if (esTecnico)
+            {
+                query = query.Where(a => a.IdTecnico == tecnicoLogueado);
+            }
+
+            // =====================================================
+            // FILTRO POR TECNICO (ADMIN PUEDE USARLO)
+            // =====================================================
+            if (!esTecnico && idTecnico.HasValue)
+            {
                 query = query.Where(a => a.IdTecnico == idTecnico);
+            }
+
+            // =====================================================
+            // FILTRO POR ESTADO
+            // =====================================================
+            if (!string.IsNullOrWhiteSpace(estado))
+            {
+                query = query.Where(a => a.Estado == estado);
+            }
 
             ViewBag.EstadoActual = estado;
             ViewBag.TecnicoActual = idTecnico;
@@ -39,9 +75,9 @@ namespace CMMS.Controllers
             return View(await query.ToListAsync());
         }
 
-        // ===========================
+        // =====================================================
         // DETAILS
-        // ===========================
+        // =====================================================
         public async Task<IActionResult> Details(int id)
         {
             var asignacion = await _context.Asignacions
@@ -53,21 +89,21 @@ namespace CMMS.Controllers
             if (asignacion == null)
                 return NotFound();
 
+            if (!PuedeAcceder(asignacion))
+                return Forbid();
+
             return View(asignacion);
         }
 
-        // ===========================
-        // CREATE GET
-        // ===========================
+        // =====================================================
+        // CREATE
+        // =====================================================
         public IActionResult Create()
         {
             CargarCombos();
             return View();
         }
 
-        // ===========================
-        // CREATE POST
-        // ===========================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Asignacion asignacion)
@@ -87,22 +123,20 @@ namespace CMMS.Controllers
             return View(asignacion);
         }
 
-        // ===========================
+        // =====================================================
         // INICIAR
-        // ===========================
+        // =====================================================
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Iniciar(int id)
         {
             var asignacion = await _context.Asignacions
                 .Include(a => a.IdOrdenNavigation)
                 .FirstOrDefaultAsync(a => a.IdAsignacion == id);
 
-            if (asignacion == null)
-                return NotFound();
+            if (asignacion == null) return NotFound();
 
-            if (asignacion.Estado == "CANCELADA" || asignacion.Estado == "FINALIZADA")
-                return BadRequest("No se puede iniciar");
+            if (!PuedeAcceder(asignacion))
+                return Forbid();
 
             asignacion.Estado = "EN PROCESO";
 
@@ -113,22 +147,20 @@ namespace CMMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ===========================
+        // =====================================================
         // FINALIZAR
-        // ===========================
+        // =====================================================
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Finalizar(int id)
         {
             var asignacion = await _context.Asignacions
                 .Include(a => a.IdOrdenNavigation)
                 .FirstOrDefaultAsync(a => a.IdAsignacion == id);
 
-            if (asignacion == null)
-                return NotFound();
+            if (asignacion == null) return NotFound();
 
-            if (asignacion.Estado == "CANCELADA")
-                return BadRequest("No se puede finalizar");
+            if (!PuedeAcceder(asignacion))
+                return Forbid();
 
             asignacion.Estado = "FINALIZADA";
 
@@ -139,22 +171,20 @@ namespace CMMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ===========================
-        // CANCELAR (ANTES DELETE)
-        // ===========================
+        // =====================================================
+        // CANCELAR
+        // =====================================================
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancelar(int id)
         {
             var asignacion = await _context.Asignacions
                 .Include(a => a.IdOrdenNavigation)
                 .FirstOrDefaultAsync(a => a.IdAsignacion == id);
 
-            if (asignacion == null)
-                return NotFound();
+            if (asignacion == null) return NotFound();
 
-            if (asignacion.Estado == "FINALIZADA")
-                return BadRequest("No se puede cancelar una finalizada");
+            if (!PuedeAcceder(asignacion))
+                return Forbid();
 
             asignacion.Estado = "CANCELADA";
 
@@ -165,54 +195,35 @@ namespace CMMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ===========================
-        // EDIT GET
-        // ===========================
-        public async Task<IActionResult> Edit(int id)
+        // =====================================================
+        // SEGURIDAD CENTRAL
+        // =====================================================
+        private bool PuedeAcceder(Asignacion asignacion)
         {
-            var asignacion = await _context.Asignacions.FindAsync(id);
+            var idRol = User.FindFirst("IdRol")?.Value;
+            var idUsuario = User.FindFirst("IdUsuario")?.Value;
 
-            if (asignacion == null)
-                return NotFound();
+            // Admin ve todo
+            if (idRol == "1")
+                return true;
 
-            if (asignacion.Estado == "FINALIZADA")
-                return RedirectToAction(nameof(Index));
-
-            CargarCombos(asignacion);
-            return View(asignacion);
-        }
-
-        // ===========================
-        // EDIT POST
-        // ===========================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Asignacion model)
-        {
-            var db = await _context.Asignacions.FindAsync(id);
-
-            if (db == null)
-                return NotFound();
-
-            if (db.Estado == "FINALIZADA")
-                return BadRequest("No se puede editar");
-
-            if (ModelState.IsValid)
+            // Técnico solo lo suyo
+            if (idRol == "2" && int.TryParse(idUsuario, out int userId))
             {
-                db.IdTecnico = model.IdTecnico;
-                db.IdUsuario = model.IdUsuario;
+                var tecnicoId = _context.Tecnicos
+                    .Where(t => t.id_usuario == userId)
+                    .Select(t => t.IdTecnico)
+                    .FirstOrDefault();
 
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return asignacion.IdTecnico == tecnicoId;
             }
 
-            CargarCombos(model);
-            return View(model);
+            return false;
         }
 
-        // ===========================
+        // =====================================================
         // COMBOS
-        // ===========================
+        // =====================================================
         private void CargarCombos(Asignacion? asignacion = null)
         {
             ViewData["IdOrden"] = new SelectList(
@@ -227,13 +238,6 @@ namespace CMMS.Controllers
                 "IdTecnico",
                 "Nombres",
                 asignacion?.IdTecnico
-            );
-
-            ViewData["IdUsuario"] = new SelectList(
-                _context.Usuarios,
-                "IdUsuario",
-                "Nombre",
-                asignacion?.IdUsuario
             );
         }
     }

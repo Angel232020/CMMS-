@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using CMMS.Models;
 
@@ -18,152 +16,192 @@ namespace CMMS.Controllers
             _context = context;
         }
 
-        // GET: SolicitudRepuestoes
+        // =========================
+        // LISTADO
+        // =========================
         public async Task<IActionResult> Index()
         {
-            var cmmsContext = _context.SolicitudRepuestos.Include(s => s.IdAsignacionNavigation).Include(s => s.IdRepuestoNavigation);
-            return View(await cmmsContext.ToListAsync());
+            var data = _context.SolicitudRepuestos
+                .Include(s => s.IdAsignacionNavigation)
+                .Include(s => s.IdRepuestoNavigation);
+
+            return View(await data.ToListAsync());
         }
 
-        // GET: SolicitudRepuestoes/Details/5
-        public async Task<IActionResult> Details(int? id)
+        // =========================
+        // DETALLE
+        // =========================
+        public async Task<IActionResult> Details(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var solicitudRepuesto = await _context.SolicitudRepuestos
+            var solicitud = await _context.SolicitudRepuestos
                 .Include(s => s.IdAsignacionNavigation)
                 .Include(s => s.IdRepuestoNavigation)
-                .FirstOrDefaultAsync(m => m.IdSolicitud == id);
-            if (solicitudRepuesto == null)
-            {
+                .FirstOrDefaultAsync(s => s.IdSolicitud == id);
+
+            if (solicitud == null)
                 return NotFound();
-            }
 
-            return View(solicitudRepuesto);
+            return View(solicitud);
         }
 
-        // GET: SolicitudRepuestoes/Create
-        public IActionResult Create()
+        // =========================
+        // CREATE (DESDE ORDEN)
+        // =========================
+        public IActionResult Create(int idAsignacion)
         {
-            ViewData["IdAsignacion"] = new SelectList(_context.Asignacions, "IdAsignacion", "IdAsignacion");
-            ViewData["IdRepuesto"] = new SelectList(_context.Repuestos, "IdRepuesto", "IdRepuesto");
-            return View();
+            if (idAsignacion <= 0)
+                return NotFound();
+
+            var model = new SolicitudRepuesto
+            {
+                IdAsignacion = idAsignacion,
+                Fecha = DateTime.Now
+            };
+
+            ViewBag.Repuestos = _context.Repuestos.ToList();
+
+            return View(model);
         }
 
-        // POST: SolicitudRepuestoes/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // =========================
+        // POST CREATE
+        // =========================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("IdSolicitud,IdAsignacion,Fecha,IdRepuesto,Cantidad,Comentarios")] SolicitudRepuesto solicitudRepuesto)
+        public async Task<IActionResult> Create(SolicitudRepuesto solicitud)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(solicitudRepuesto);
+                ViewBag.Repuestos = _context.Repuestos.ToList();
+                return View(solicitud);
+            }
+
+            // 🔥 FECHA AUTOMÁTICA
+            solicitud.Fecha = DateTime.Now;
+
+            // =========================
+            // 🔥 VALIDAR STOCK
+            // =========================
+            var repuesto = await _context.Repuestos
+                .FirstOrDefaultAsync(r => r.IdRepuesto == solicitud.IdRepuesto);
+
+            if (repuesto == null)
+            {
+                ModelState.AddModelError("", "Repuesto no encontrado");
+                ViewBag.Repuestos = _context.Repuestos.ToList();
+                return View(solicitud);
+            }
+
+            if (repuesto.Stock < solicitud.Cantidad)
+            {
+                ModelState.AddModelError("", "Stock insuficiente");
+                ViewBag.Repuestos = _context.Repuestos.ToList();
+                return View(solicitud);
+            }
+
+            // =========================
+            // 🔥 GUARDAR SOLICITUD
+            // =========================
+            _context.SolicitudRepuestos.Add(solicitud);
+
+            // 🔥 DESCONTAR STOCK
+            repuesto.Stock -= solicitud.Cantidad;
+
+            await _context.SaveChangesAsync();
+
+            // =========================
+            // 🔥 REGRESAR AL DETALLE DE ORDEN
+            // =========================
+            var ordenId = await _context.Asignacions
+                .Where(a => a.IdAsignacion == solicitud.IdAsignacion)
+                .Select(a => a.IdOrden)
+                .FirstOrDefaultAsync();
+
+            return RedirectToAction("Details", "OrdenTrabajoes", new { id = ordenId });
+        }
+
+        // =========================
+        // EDIT
+        // =========================
+        public async Task<IActionResult> Edit(int id)
+        {
+            var solicitud = await _context.SolicitudRepuestos.FindAsync(id);
+
+            if (solicitud == null)
+                return NotFound();
+
+            ViewBag.Repuestos = _context.Repuestos.ToList();
+
+            return View(solicitud);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, SolicitudRepuesto solicitud)
+        {
+            if (id != solicitud.IdSolicitud)
+                return NotFound();
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Repuestos = _context.Repuestos.ToList();
+                return View(solicitud);
+            }
+
+            try
+            {
+                _context.Update(solicitud);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
             }
-            ViewData["IdAsignacion"] = new SelectList(_context.Asignacions, "IdAsignacion", "IdAsignacion", solicitudRepuesto.IdAsignacion);
-            ViewData["IdRepuesto"] = new SelectList(_context.Repuestos, "IdRepuesto", "IdRepuesto", solicitudRepuesto.IdRepuesto);
-            return View(solicitudRepuesto);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!_context.SolicitudRepuestos.Any(e => e.IdSolicitud == id))
+                    return NotFound();
+
+                throw;
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
-        // GET: SolicitudRepuestoes/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        // =========================
+        // DELETE
+        // =========================
+        public async Task<IActionResult> Delete(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var solicitudRepuesto = await _context.SolicitudRepuestos.FindAsync(id);
-            if (solicitudRepuesto == null)
-            {
-                return NotFound();
-            }
-            ViewData["IdAsignacion"] = new SelectList(_context.Asignacions, "IdAsignacion", "IdAsignacion", solicitudRepuesto.IdAsignacion);
-            ViewData["IdRepuesto"] = new SelectList(_context.Repuestos, "IdRepuesto", "IdRepuesto", solicitudRepuesto.IdRepuesto);
-            return View(solicitudRepuesto);
-        }
-
-        // POST: SolicitudRepuestoes/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("IdSolicitud,IdAsignacion,Fecha,IdRepuesto,Cantidad,Comentarios")] SolicitudRepuesto solicitudRepuesto)
-        {
-            if (id != solicitudRepuesto.IdSolicitud)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(solicitudRepuesto);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!SolicitudRepuestoExists(solicitudRepuesto.IdSolicitud))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["IdAsignacion"] = new SelectList(_context.Asignacions, "IdAsignacion", "IdAsignacion", solicitudRepuesto.IdAsignacion);
-            ViewData["IdRepuesto"] = new SelectList(_context.Repuestos, "IdRepuesto", "IdRepuesto", solicitudRepuesto.IdRepuesto);
-            return View(solicitudRepuesto);
-        }
-
-        // GET: SolicitudRepuestoes/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var solicitudRepuesto = await _context.SolicitudRepuestos
+            var solicitud = await _context.SolicitudRepuestos
                 .Include(s => s.IdAsignacionNavigation)
                 .Include(s => s.IdRepuestoNavigation)
-                .FirstOrDefaultAsync(m => m.IdSolicitud == id);
-            if (solicitudRepuesto == null)
-            {
-                return NotFound();
-            }
+                .FirstOrDefaultAsync(s => s.IdSolicitud == id);
 
-            return View(solicitudRepuesto);
+            if (solicitud == null)
+                return NotFound();
+
+            return View(solicitud);
         }
 
-        // POST: SolicitudRepuestoes/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var solicitudRepuesto = await _context.SolicitudRepuestos.FindAsync(id);
-            if (solicitudRepuesto != null)
+            var solicitud = await _context.SolicitudRepuestos.FindAsync(id);
+
+            if (solicitud != null)
             {
-                _context.SolicitudRepuestos.Remove(solicitudRepuesto);
+                // 🔥 DEVOLVER STOCK
+                var repuesto = await _context.Repuestos
+                    .FirstOrDefaultAsync(r => r.IdRepuesto == solicitud.IdRepuesto);
+
+                if (repuesto != null)
+                {
+                    repuesto.Stock += solicitud.Cantidad;
+                }
+
+                _context.SolicitudRepuestos.Remove(solicitud);
+                await _context.SaveChangesAsync();
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool SolicitudRepuestoExists(int id)
-        {
-            return _context.SolicitudRepuestos.Any(e => e.IdSolicitud == id);
         }
     }
 }
