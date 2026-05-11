@@ -40,14 +40,14 @@ public class ReporteController : Controller
             .Count();
 
         model.OrdenesPendientes = _context.OrdenTrabajos
-            .Where(o => o.Estado == "Pendiente" &&
+            .Where(o => o.Estado == "PENDIENTE" &&
                         o.FechaCreacion != null &&
                         o.FechaCreacion.Value.Date >= fi &&
                         o.FechaCreacion.Value.Date <= ff)
             .Count();
 
         model.OrdenesFinalizadas = _context.OrdenTrabajos
-            .Where(o => o.Estado == "Finalizado" &&
+            .Where(o => o.Estado == "FINALIZADA" &&
                         o.FechaCreacion != null &&
                         o.FechaCreacion.Value.Date >= fi &&
                         o.FechaCreacion.Value.Date <= ff)

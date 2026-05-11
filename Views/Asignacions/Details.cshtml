@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Detalle de Asignación";
+
+    var estado = Model?.IdOrdenNavigation?.Estado?.Trim().ToUpper();
 }
 
 <div class="container mt-4">
@@ -108,14 +110,18 @@
 
                 </a>
 
-                <a asp-action="Edit"
-                   asp-route-id="@Model?.IdAsignacion"
-                   class="btn btn-warning">
+                <!-- 🔴 SOLO MUESTRA EDITAR SI NO ESTÁ FINALIZADA -->
+                @if (estado != "FINALIZADA")
+                {
+                    <a asp-action="Edit"
+                       asp-route-id="@Model?.IdAsignacion"
+                       class="btn btn-warning">
 
-                    <i class="bi bi-pencil-square"></i>
-                    Editar
+                        <i class="bi bi-pencil-square"></i>
+                        Editar
 
-                </a>
+                    </a>
+                }
 
             </div>
 

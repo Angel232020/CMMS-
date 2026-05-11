@@ -10,94 +10,70 @@
 
         <!-- HEADER -->
         <div class="card-header bg-primary text-white">
-
             <h3 class="mb-0">
                 <i class="bi bi-person-workspace"></i>
                 Registrar Asignación
             </h3>
-
         </div>
 
         <!-- BODY -->
         <div class="card-body p-4">
 
-            <form asp-action="Create">
+            <!-- 🔥 FORM ABIERTO CORRECTAMENTE -->
+            <form asp-action="Create" method="post">
 
-                <div asp-validation-summary="ModelOnly"
-                     class="alert alert-danger">
-                </div>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                 <div class="row">
 
                     <!-- ORDEN -->
                     <div class="col-md-6 mb-3">
 
-                        <label asp-for="IdOrden"
-                               class="form-label fw-bold">
+                        <label asp-for="IdOrden" class="form-label fw-bold">
                             Orden de Trabajo
                         </label>
 
                         <select asp-for="IdOrden"
                                 class="form-select"
                                 asp-items="ViewBag.IdOrden">
-
-                            <option value="">
-                                Seleccione una orden
-                            </option>
-
+                            <option value="">Seleccione una orden</option>
                         </select>
 
-                        <span asp-validation-for="IdOrden"
-                              class="text-danger">
-                        </span>
+                        <span asp-validation-for="IdOrden" class="text-danger"></span>
 
                     </div>
 
                     <!-- TÉCNICO -->
                     <div class="col-md-6 mb-3">
 
-                        <label asp-for="IdTecnico"
-                               class="form-label fw-bold">
+                        <label asp-for="IdTecnico" class="form-label fw-bold">
                             Técnico
                         </label>
 
                         <select asp-for="IdTecnico"
                                 class="form-select"
                                 asp-items="ViewBag.IdTecnico">
-
-                            <option value="">
-                                Seleccione un técnico
-                            </option>
-
+                            <option value="">Seleccione un técnico</option>
                         </select>
 
-                        <span asp-validation-for="IdTecnico"
-                              class="text-danger">
-                        </span>
+                        <span asp-validation-for="IdTecnico" class="text-danger"></span>
 
                     </div>
 
                     <!-- USUARIO -->
                     <div class="col-md-6 mb-3">
 
-                        <label asp-for="IdUsuario"
-                               class="form-label fw-bold">
+                        <label asp-for="IdUsuario" class="form-label fw-bold">
                             Usuario Responsable
                         </label>
 
                         <select asp-for="IdUsuario"
                                 class="form-select"
                                 asp-items="ViewBag.IdUsuario">
-
-                            <option value="">
-                                Seleccione un usuario
-                            </option>
-
+                            <option value="">Seleccione un usuario</option>
                         </select>
 
-                        <span asp-validation-for="IdUsuario"
-                              class="text-danger">
-                        </span>
+                        <span asp-validation-for="IdUsuario" class="text-danger"></span>
 
                     </div>
 
@@ -108,14 +84,14 @@
                 <!-- BOTONES -->
                 <div class="d-flex justify-content-between">
 
-                    <a asp-action="Index"
+                    <a asp-controller="Asignacions"
+                       asp-action="Index"
                        class="btn btn-secondary">
                         <i class="bi bi-arrow-left-circle"></i>
                         Regresar
                     </a>
 
-                    <button type="submit"
-                            class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary">
                         <i class="bi bi-save-fill"></i>
                         Guardar Asignación
                     </button>
@@ -131,7 +107,5 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

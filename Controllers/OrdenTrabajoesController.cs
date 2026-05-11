@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -22,21 +21,21 @@ namespace CMMS.Controllers
         // =====================================================
         public async Task<IActionResult> Index(string estado)
         {
-            var ordenes = _context.OrdenTrabajos
+            var query = _context.OrdenTrabajos
                 .Include(o => o.IdClienteNavigation)
                 .Include(o => o.IdMaquinaNavigation)
                 .Include(o => o.IdTipoServicioNavigation)
                 .Include(o => o.IdUsuarioNavigation)
                 .AsQueryable();
 
-            if (!string.IsNullOrEmpty(estado))
+            if (!string.IsNullOrWhiteSpace(estado))
             {
-                ordenes = ordenes.Where(o => o.Estado == estado);
+                query = query.Where(o => o.Estado == estado);
             }
 
             ViewBag.EstadoActual = estado;
 
-            return View(await ordenes.ToListAsync());
+            return View(await query.ToListAsync());
         }
 
         // =====================================================
@@ -47,21 +46,21 @@ namespace CMMS.Controllers
             if (id == null)
                 return NotFound();
 
-            var ordenTrabajo = await _context.OrdenTrabajos
+            var orden = await _context.OrdenTrabajos
                 .Include(o => o.IdClienteNavigation)
                 .Include(o => o.IdMaquinaNavigation)
                 .Include(o => o.IdTipoServicioNavigation)
                 .Include(o => o.IdUsuarioNavigation)
-                .FirstOrDefaultAsync(m => m.IdOrden == id);
+                .FirstOrDefaultAsync(o => o.IdOrden == id);
 
-            if (ordenTrabajo == null)
+            if (orden == null)
                 return NotFound();
 
-            return View(ordenTrabajo);
+            return View(orden);
         }
 
         // =====================================================
-        // CREATE (GET)
+        // CREATE
         // =====================================================
         public IActionResult Create()
         {
@@ -69,51 +68,48 @@ namespace CMMS.Controllers
             return View();
         }
 
-        // =====================================================
-        // CREATE (POST)
-        // =====================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(OrdenTrabajo ordenTrabajo)
+        public async Task<IActionResult> Create(OrdenTrabajo orden)
         {
             if (ModelState.IsValid)
             {
-                // 🔥 SIEMPRE CONTROLADO POR SISTEMA
-                ordenTrabajo.Estado = "PENDIENTE";
+                // 🔒 SIEMPRE PENDIENTE AL CREAR
+                orden.Estado = "PENDIENTE";
 
-                _context.Add(ordenTrabajo);
+                _context.Add(orden);
                 await _context.SaveChangesAsync();
 
                 return RedirectToAction(nameof(Index));
             }
 
-            CargarCombos(ordenTrabajo);
-            return View(ordenTrabajo);
+            CargarCombos(orden);
+            return View(orden);
         }
 
         // =====================================================
-        // EDIT (GET)
+        // EDIT GET
         // =====================================================
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
                 return NotFound();
 
-            var ordenTrabajo = await _context.OrdenTrabajos.FindAsync(id);
+            var orden = await _context.OrdenTrabajos.FindAsync(id);
 
-            if (ordenTrabajo == null)
+            if (orden == null)
                 return NotFound();
 
-            // 🔒 BLOQUEO REAL
-            if (ordenTrabajo.Estado?.Trim().ToUpper() == "FINALIZADA")
+            // 🔒 BLOQUEO FINALIZADA
+            if (orden.Estado?.Trim().ToUpper() == "FINALIZADA")
                 return RedirectToAction(nameof(Index));
 
-            CargarCombos(ordenTrabajo);
-            return View(ordenTrabajo);
+            CargarCombos(orden);
+            return View(orden);
         }
 
         // =====================================================
-        // EDIT (POST)
+        // EDIT POST
         // =====================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -123,20 +119,25 @@ namespace CMMS.Controllers
                 return NotFound();
 
             var db = await _context.OrdenTrabajos
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.IdOrden == id);
+                .FirstOrDefaultAsync(o => o.IdOrden == id);
 
             if (db == null)
                 return NotFound();
 
-            // 🔒 BLOQUEO REAL
+            // 🔒 BLOQUEO REAL FINALIZADA
             if (db.Estado?.Trim().ToUpper() == "FINALIZADA")
                 return BadRequest("No se puede editar una orden finalizada");
 
             if (ModelState.IsValid)
             {
-                _context.Update(ordenTrabajo);
+                db.Descripcion = ordenTrabajo.Descripcion;
+                db.IdCliente = ordenTrabajo.IdCliente;
+                db.IdMaquina = ordenTrabajo.IdMaquina;
+                db.IdTipoServicio = ordenTrabajo.IdTipoServicio;
+                db.IdUsuario = ordenTrabajo.IdUsuario;
+
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
 
@@ -145,46 +146,43 @@ namespace CMMS.Controllers
         }
 
         // =====================================================
-        // DELETE (GET)
+        // DELETE GET
         // =====================================================
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
                 return NotFound();
 
-            var ordenTrabajo = await _context.OrdenTrabajos
+            var orden = await _context.OrdenTrabajos
                 .Include(o => o.IdClienteNavigation)
                 .Include(o => o.IdMaquinaNavigation)
-                .Include(o => o.IdTipoServicioNavigation)
-                .Include(o => o.IdUsuarioNavigation)
-                .FirstOrDefaultAsync(m => m.IdOrden == id);
+                .FirstOrDefaultAsync(o => o.IdOrden == id);
 
-            if (ordenTrabajo == null)
+            if (orden == null)
                 return NotFound();
 
-            return View(ordenTrabajo);
+            return View(orden);
         }
 
         // =====================================================
-        // DELETE (SOFT)
+        // DELETE POST (SOFT DELETE)
         // =====================================================
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var ordenTrabajo = await _context.OrdenTrabajos
-                .FirstOrDefaultAsync(o => o.IdOrden == id);
+            var orden = await _context.OrdenTrabajos.FindAsync(id);
 
-            if (ordenTrabajo == null)
+            if (orden == null)
                 return NotFound();
 
-            // 🔒 BLOQUEO REAL
-            if (ordenTrabajo.Estado?.Trim().ToUpper() == "FINALIZADA")
-                return BadRequest("No se puede cancelar una orden finalizada");
+            // 🔒 BLOQUEO FINALIZADA
+            if (orden.Estado?.Trim().ToUpper() == "FINALIZADA")
+                return BadRequest("No se puede eliminar una orden finalizada");
 
-            ordenTrabajo.Estado = "CANCELADA";
+            orden.Estado = "CANCELADA";
 
-            _context.Update(ordenTrabajo);
+            _context.Update(orden);
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
@@ -193,49 +191,48 @@ namespace CMMS.Controllers
         // =====================================================
         // COMBOS
         // =====================================================
-        private void CargarCombos(OrdenTrabajo? ordenTrabajo = null)
+        private void CargarCombos(OrdenTrabajo? orden = null)
         {
             ViewData["IdCliente"] = new SelectList(
                 _context.Clientes.Select(c => new
                 {
                     c.IdCliente,
-                    NombreCompleto = c.Nombres + " " + c.Apellidos
+                    Nombre = c.Nombres + " " + c.Apellidos
                 }),
                 "IdCliente",
-                "NombreCompleto",
-                ordenTrabajo?.IdCliente
+                "Nombre",
+                orden?.IdCliente
             );
 
             ViewData["IdMaquina"] = new SelectList(
                 _context.Maquinas.Select(m => new
                 {
                     m.IdMaquina,
-                    NombreMaquina = m.Marca + " - " + m.Modelo
+                    Nombre = m.Marca + " - " + m.Modelo
                 }),
                 "IdMaquina",
-                "NombreMaquina",
-                ordenTrabajo?.IdMaquina
+                "Nombre",
+                orden?.IdMaquina
             );
 
             ViewData["IdTipoServicio"] = new SelectList(
                 _context.TipoServicios,
                 "IdTipoServicio",
                 "Nombre",
-                ordenTrabajo?.IdTipoServicio
+                orden?.IdTipoServicio
             );
 
             ViewData["IdUsuario"] = new SelectList(
-                _context.Usuarios.Select(u => new
-                {
-                    u.IdUsuario,
-                    NombreUsuario = u.Nombre
-                }),
+                _context.Usuarios,
                 "IdUsuario",
-                "NombreUsuario",
-                ordenTrabajo?.IdUsuario
+                "Nombre",
+                orden?.IdUsuario
             );
         }
 
+        // =====================================================
+        // EXISTS
+        // =====================================================
         private bool OrdenTrabajoExists(int id)
         {
             return _context.OrdenTrabajos.Any(e => e.IdOrden == id);
