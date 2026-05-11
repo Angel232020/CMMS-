@@ -1,47 +1,117 @@
 ﻿@model IEnumerable<CMMS.Models.Repuesto>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Repuestos";
 }
 
-<h1>Index</h1>
+<div class="container mt-4">
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Nombre)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Stock)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Precio)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Nombre)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Stock)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Precio)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.IdRepuesto">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.IdRepuesto">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.IdRepuesto">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
+    <!-- ENCABEZADO -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+
+        <h2 class="fw-bold text-primary mb-0">
+            <i class="bi bi-box-seam"></i>
+            Gestión de Repuestos
+        </h2>
+
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i>
+                Nuevo Repuesto
+            </a>
+
+        </div>
+
+    </div>
+
+    <!-- TABLA -->
+    <div class="card shadow border-0 rounded-4">
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Stock</th>
+                            <th>Precio</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <!-- NOMBRE -->
+                                <td class="fw-semibold">
+                                    @item.Nombre
+                                </td>
+
+                                <!-- STOCK (tipo estado como OT) -->
+                                <td>
+                                    @if (item.Stock <= 5)
+                                    {
+                                        <span class="badge bg-danger">Crítico (@item.Stock)</span>
+                                    }
+                                    else if (item.Stock <= 15)
+                                    {
+                                        <span class="badge bg-warning text-dark">Bajo (@item.Stock)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">OK (@item.Stock)</span>
+                                    }
+                                </td>
+
+                                <!-- PRECIO -->
+                                <td>
+                                    $@item.Precio
+                                </td>
+
+                                <!-- ACCIONES -->
+                                <td class="text-center">
+
+                                    <!-- DETALLE -->
+                                    <a asp-action="Details"
+                                       asp-route-id="@item.IdRepuesto"
+                                       class="btn btn-info btn-sm text-white">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </a>
+
+                                    <!-- EDITAR -->
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.IdRepuesto"
+                                       class="btn btn-warning btn-sm">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+
+                                    <!-- ELIMINAR -->
+                                    <a asp-action="Delete"
+                                       asp-route-id="@item.IdRepuesto"
+                                       class="btn btn-danger btn-sm">
+                                        <i class="bi bi-x-circle"></i>
+                                    </a>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

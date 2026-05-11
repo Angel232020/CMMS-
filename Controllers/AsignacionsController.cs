@@ -40,7 +40,7 @@ namespace CMMS.Controllers
         }
 
         // ===========================
-        // DETAILS  👈 AQUÍ ESTABA EL PROBLEMA
+        // DETAILS
         // ===========================
         public async Task<IActionResult> Details(int id)
         {
@@ -75,7 +75,7 @@ namespace CMMS.Controllers
             if (ModelState.IsValid)
             {
                 asignacion.FechaAsignacion = DateTime.Now;
-                asignacion.Estado = "ACTIVA";
+                asignacion.Estado = "PENDIENTE";
 
                 _context.Add(asignacion);
                 await _context.SaveChangesAsync();
@@ -98,10 +98,11 @@ namespace CMMS.Controllers
                 .Include(a => a.IdOrdenNavigation)
                 .FirstOrDefaultAsync(a => a.IdAsignacion == id);
 
-            if (asignacion == null) return NotFound();
+            if (asignacion == null)
+                return NotFound();
 
-            if (asignacion.Estado == "CANCELADA")
-                return BadRequest("Asignación cancelada");
+            if (asignacion.Estado == "CANCELADA" || asignacion.Estado == "FINALIZADA")
+                return BadRequest("No se puede iniciar");
 
             asignacion.Estado = "EN PROCESO";
 
@@ -123,12 +124,42 @@ namespace CMMS.Controllers
                 .Include(a => a.IdOrdenNavigation)
                 .FirstOrDefaultAsync(a => a.IdAsignacion == id);
 
-            if (asignacion == null) return NotFound();
+            if (asignacion == null)
+                return NotFound();
+
+            if (asignacion.Estado == "CANCELADA")
+                return BadRequest("No se puede finalizar");
 
             asignacion.Estado = "FINALIZADA";
 
             if (asignacion.IdOrdenNavigation != null)
                 asignacion.IdOrdenNavigation.Estado = "FINALIZADA";
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        // ===========================
+        // CANCELAR (ANTES DELETE)
+        // ===========================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancelar(int id)
+        {
+            var asignacion = await _context.Asignacions
+                .Include(a => a.IdOrdenNavigation)
+                .FirstOrDefaultAsync(a => a.IdAsignacion == id);
+
+            if (asignacion == null)
+                return NotFound();
+
+            if (asignacion.Estado == "FINALIZADA")
+                return BadRequest("No se puede cancelar una finalizada");
+
+            asignacion.Estado = "CANCELADA";
+
+            if (asignacion.IdOrdenNavigation != null)
+                asignacion.IdOrdenNavigation.Estado = "CANCELADA";
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
@@ -141,7 +172,8 @@ namespace CMMS.Controllers
         {
             var asignacion = await _context.Asignacions.FindAsync(id);
 
-            if (asignacion == null) return NotFound();
+            if (asignacion == null)
+                return NotFound();
 
             if (asignacion.Estado == "FINALIZADA")
                 return RedirectToAction(nameof(Index));
@@ -159,7 +191,8 @@ namespace CMMS.Controllers
         {
             var db = await _context.Asignacions.FindAsync(id);
 
-            if (db == null) return NotFound();
+            if (db == null)
+                return NotFound();
 
             if (db.Estado == "FINALIZADA")
                 return BadRequest("No se puede editar");

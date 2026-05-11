@@ -55,11 +55,17 @@
                             selected="@(ViewBag.EstadoActual?.ToString() == "FINALIZADA")">
                         FINALIZADA
                     </option>
+
+                    <option value="CANCELADA"
+                            selected="@(ViewBag.EstadoActual?.ToString() == "CANCELADA")">
+                        CANCELADA
+                    </option>
+
                 </select>
 
                 @if (esAdmin)
                 {
-                    <select name="tecnico" class="form-select" style="width: 200px;">
+                    <select name="idTecnico" class="form-select" style="width: 200px;">
                         <option value="">Técnico: Todos</option>
 
                         @foreach (var t in ViewBag.Tecnicos as SelectList)
@@ -112,10 +118,13 @@
                         {
                             foreach (var item in Model)
                             {
-                                var estado = item.IdOrdenNavigation?.Estado?.Trim().ToUpper();
+                                // 🔴 CORRECCIÓN IMPORTANTE: estado correcto
+                                var estado = item.Estado?.Trim().ToUpper();
+
                                 bool esFinalizada = estado == "FINALIZADA";
                                 bool esPendiente = estado == "PENDIENTE";
                                 bool enProceso = estado == "EN PROCESO";
+                                bool esCancelada = estado == "CANCELADA";
 
                                 <tr>
 
@@ -141,6 +150,12 @@
                                         {
                                             <span class="badge bg-success">
                                                 <i class="bi bi-check-circle-fill"></i> FINALIZADA
+                                            </span>
+                                        }
+                                        else if (estado == "CANCELADA")
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-x-circle-fill"></i> CANCELADA
                                             </span>
                                         }
                                         else
@@ -171,36 +186,30 @@
                                             <i class="bi bi-eye-fill"></i>
                                         </a>
 
-                                        <!-- 🔴 BLOQUEO TOTAL SI FINALIZADA -->
-                                        @if (!esFinalizada)
+                                        <!-- INICIAR -->
+                                        @if (!esFinalizada && !esCancelada && esPendiente)
                                         {
-                                            <!-- TECNICO O ADMIN PUEDEN EJECUTAR FLUJO -->
-
-                                            @if (esPendiente)
-                                            {
-                                                <form asp-action="Iniciar" method="post" style="display:inline;">
-                                                    <input type="hidden" name="id" value="@item.IdAsignacion" />
-
-                                                    <button type="submit" class="btn btn-primary btn-sm">
-                                                        <i class="bi bi-play-fill"></i>
-                                                    </button>
-                                                </form>
-                                            }
-
-                                            @if (enProceso)
-                                            {
-                                                <form asp-action="Finalizar" method="post" style="display:inline;">
-                                                    <input type="hidden" name="id" value="@item.IdAsignacion" />
-
-                                                    <button type="submit" class="btn btn-success btn-sm">
-                                                        <i class="bi bi-check2-circle"></i>
-                                                    </button>
-                                                </form>
-                                            }
+                                            <form asp-action="Iniciar" method="post" class="d-inline">
+                                                <input type="hidden" name="id" value="@item.IdAsignacion" />
+                                                <button type="submit" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-play-fill"></i>
+                                                </button>
+                                            </form>
                                         }
 
-                                        <!-- ADMIN EXTRA ACCIONES -->
-                                        @if (esAdmin && !esFinalizada)
+                                        <!-- FINALIZAR -->
+                                        @if (!esFinalizada && !esCancelada && enProceso)
+                                        {
+                                            <form asp-action="Finalizar" method="post" class="d-inline">
+                                                <input type="hidden" name="id" value="@item.IdAsignacion" />
+                                                <button type="submit" class="btn btn-success btn-sm">
+                                                    <i class="bi bi-check2-circle"></i>
+                                                </button>
+                                            </form>
+                                        }
+
+                                        <!-- ADMIN -->
+                                        @if (esAdmin && !esFinalizada && !esCancelada)
                                         {
                                             <a asp-action="Edit"
                                                asp-route-id="@item.IdAsignacion"
@@ -208,11 +217,19 @@
                                                 <i class="bi bi-pencil-square"></i>
                                             </a>
 
-                                            <a asp-action="Delete"
-                                               asp-route-id="@item.IdAsignacion"
-                                               class="btn btn-danger btn-sm">
-                                                <i class="bi bi-x-circle"></i>
-                                            </a>
+                                            <!-- CANCELAR CORRECTO -->
+                                            <form asp-action="Cancelar"
+                                                  method="post"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('¿Seguro que deseas cancelar esta asignación?');">
+
+                                                <input type="hidden" name="id" value="@item.IdAsignacion" />
+
+                                                <button type="submit" class="btn btn-danger btn-sm">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+
+                                            </form>
                                         }
 
                                     </td>
